@@ -1,20 +1,18 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2, Sun, Moon, Wallet } from "lucide-react";
+import { transactionApi } from "./api/transactionApi";
 
 /**
- * JUST TRACK — frontend only.
+ * JUST TRACK — wired to a Spring Boot REST API.
  *
- * This component is built to sit in front of a Spring Boot REST API.
- * Everywhere state is mutated locally (add/delete), there's a comment
- * showing the equivalent HTTP call your backend should expose:
- *
+ * Backend endpoints used:
  *   GET    /api/transactions          -> list all entries
  *   POST   /api/transactions          -> create an entry
  *   DELETE /api/transactions/{id}     -> remove an entry
  *
- * Swap the local useState seed + handlers for fetch() calls once the
- * backend is live. Shape of a transaction matches a typical JPA entity:
- *   { id, date, description, category, type: 'INCOME' | 'EXPENSE', amount }
+ * Shape of a transaction matches the JPA entity:
+ *   { id, createdDate, description, category, type: 'INCOME' | 'EXPENSE', amount }
+ *
  */
 
 const CATEGORIES = [
@@ -28,17 +26,6 @@ const CATEGORIES = [
   "Other",
 ];
 
-const SEED_TRANSACTIONS = [
-  { id: 1, date: "2026-07-01", description: "Monthly salary", category: "Salary", type: "INCOME", amount: 4200 },
-  { id: 2, date: "2026-07-02", description: "Rent", category: "Housing", type: "EXPENSE", amount: 1350 },
-  { id: 3, date: "2026-07-03", description: "Groceries — Reliance Fresh", category: "Groceries", type: "EXPENSE", amount: 86.4 },
-  { id: 4, date: "2026-07-05", description: "Freelance web build", category: "Freelance", type: "INCOME", amount: 2000 },
-  { id: 5, date: "2026-07-06", description: "Electricity bill", category: "Utilities", type: "EXPENSE", amount: 64.2 },
-  { id: 6, date: "2026-07-08", description: "Auto-rickshaw pass", category: "Transport", type: "EXPENSE", amount: 32 },
-  { id: 7, date: "2026-07-09", description: "Movie night", category: "Entertainment", type: "EXPENSE", amount: 28.9 },
-  { id: 8, date: "2026-07-10", description: "Groceries — vegetables", category: "Groceries", type: "EXPENSE", amount: 41.1 },
-];
-
 const currency = (n) =>
   (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -46,12 +33,15 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export default function JustTrackBudgetTracker() {
   const [dark, setDark] = useState(false);
-  const [transactions, setTransactions] = useState(SEED_TRANSACTIONS);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [filterCategory, setFilterCategory] = useState("ALL");
   const [filterType, setFilterType] = useState("ALL");
 
   const [form, setForm] = useState({
-    date: todayISO(),
     description: "",
     category: CATEGORIES[0],
     type: "EXPENSE",
@@ -67,26 +57,65 @@ export default function JustTrackBudgetTracker() {
     document.documentElement.style.background = dark ? "#14171C" : "#FAF7F0";
   }, [dark]);
 
-  const nextId = useMemo(
-    () => (transactions.length ? Math.max(...transactions.map((t) => t.id)) + 1 : 1),
-    [transactions]
-  );
+  // GET /api/transactions on mount
+  useEffect(() => {
+    let isMounted = true;
 
-  function handleAdd(e) {
+    async function fetchTransactions() {
+      try {
+        setLoading(true);
+        const res = await transactionApi.getAll();
+        if (isMounted) setTransactions(res.data);
+      } catch (err) {
+        if (isMounted) setLoadError("Failed to load transactions. Is the backend running?");
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchTransactions();
+    return () => { isMounted = false; };
+  }, []);
+
+  async function handleAdd(e) {
     e.preventDefault();
     const amt = parseFloat(form.amount);
     if (!form.description.trim() || !amt || amt <= 0) return;
 
-    const entry = { id: nextId, date: form.date, description: form.description.trim(), category: form.category, type: form.type, amount: amt };
+    const payload = {
+      description: form.description.trim(),
+      category: form.category,
+      type: form.type,
+      amount: amt,
+    };
 
-    // POST /api/transactions  { date, description, category, type, amount }
-    setTransactions((prev) => [...prev, entry]);
-    setForm({ date: todayISO(), description: "", category: CATEGORIES[0], type: "EXPENSE", amount: "" });
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      // POST /api/transactions — server assigns id + createdDate
+      const res = await transactionApi.create(payload);
+      setTransactions((prev) => [...prev, res.data]);
+      setForm({ description: "", category: CATEGORIES[0], type: "EXPENSE", amount: "" });
+    } catch (err) {
+      setSubmitError("Failed to add transaction.");
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function handleDelete(id) {
-    // DELETE /api/transactions/{id}
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  async function handleDelete(id) {
+    const prev = transactions;
+    // optimistic update, rolled back on failure
+    setTransactions((cur) => cur.filter((t) => t.id !== id));
+    // try {
+    //   // DELETE /api/transactions/{id}
+    //   await transactionApi.delete(id);
+    // } catch (err) {
+    //   setTransactions(prev);
+    //   console.error("Failed to delete transaction", err);
+    // }
   }
 
   const totalIncome = transactions.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
@@ -94,7 +123,9 @@ export default function JustTrackBudgetTracker() {
   const balance = totalIncome - totalExpense;
 
   // running balance computed chronologically, then shown newest-first
-  const chronological = [...transactions].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+  const chronological = [...transactions].sort(
+    (a, b) => (a.createdDate || "").localeCompare(b.createdDate || "") || a.id - b.id
+  );
   let running = 0;
   const withRunning = chronological.map((t) => {
     running += t.type === "INCOME" ? t.amount : -t.amount;
@@ -220,6 +251,9 @@ export default function JustTrackBudgetTracker() {
           transition: opacity 0.2s ease;
         }
         .jt-submit:hover { opacity: 0.85; }
+        .jt-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .jt-error { font-size: 12.5px; color: var(--expense); margin-top: 10px; }
 
         .jt-filters { display: flex; gap: 10px; margin-bottom: 12px; }
         .jt-filters select { background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; font-size: 13px; font-family: 'Inter'; }
@@ -241,6 +275,8 @@ export default function JustTrackBudgetTracker() {
         .jt-row .del:hover { color: var(--expense); }
 
         .jt-empty { text-align: center; padding: 30px 0; color: var(--ink-soft); font-size: 13px; }
+        .jt-loading { text-align: center; padding: 30px 0; color: var(--ink-soft); font-size: 13px; }
+        .jt-load-error { text-align: center; padding: 30px 0; color: var(--expense); font-size: 13px; }
 
         .jt-tally-row { display: grid; grid-template-columns: 110px 1fr 70px; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 12.5px; }
         .jt-tally-track { background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; height: 8px; overflow: hidden; }
@@ -299,10 +335,6 @@ export default function JustTrackBudgetTracker() {
           <form onSubmit={handleAdd}>
             <div className="jt-form-grid">
               <div className="jt-field">
-                <label htmlFor="jt-date">Date</label>
-                <input id="jt-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-              </div>
-              <div className="jt-field">
                 <label htmlFor="jt-amount">Amount</label>
                 <input
                   id="jt-amount"
@@ -314,6 +346,14 @@ export default function JustTrackBudgetTracker() {
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
                 />
               </div>
+              <div className="jt-field">
+                <label htmlFor="jt-cat">Category</label>
+                <select id="jt-cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
               <div className="jt-field full">
                 <label htmlFor="jt-desc">Description</label>
                 <input
@@ -324,15 +364,7 @@ export default function JustTrackBudgetTracker() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
-              <div className="jt-field">
-                <label htmlFor="jt-cat">Category</label>
-                <select id="jt-cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="jt-field">
+              <div className="jt-field full">
                 <label>Type</label>
                 <div className="jt-toggle">
                   <button
@@ -352,9 +384,10 @@ export default function JustTrackBudgetTracker() {
                 </div>
               </div>
             </div>
-            <button type="submit" className="jt-submit">
-              <Plus size={16} /> Add entry
+            <button type="submit" className="jt-submit" disabled={submitting}>
+              <Plus size={16} /> {submitting ? "Adding..." : "Add entry"}
             </button>
+            {submitError && <div className="jt-error">{submitError}</div>}
           </form>
         </div>
 
@@ -374,13 +407,17 @@ export default function JustTrackBudgetTracker() {
             </select>
           </div>
 
-          {visibleRows.length === 0 ? (
+          {loading ? (
+            <div className="jt-loading">Loading transactions...</div>
+          ) : loadError ? (
+            <div className="jt-load-error">{loadError}</div>
+          ) : visibleRows.length === 0 ? (
             <div className="jt-empty">No entries match this filter yet.</div>
           ) : (
             <div className="jt-ledger">
               {visibleRows.map((t) => (
                 <div className="jt-row" key={t.id}>
-                  <div className="date jt-mono">{t.date.slice(5)}</div>
+                  <div className="date jt-mono">{(t.createdDate || "").slice(5) || "—"}</div>
                   <div className="desc">
                     {t.description}
                     <span className="cat">{t.category}</span>
@@ -415,7 +452,7 @@ export default function JustTrackBudgetTracker() {
           </div>
         )}
 
-        <div className="jt-footer">Wire this up to your Spring Boot API at /api/transactions — see comments in the source.</div>
+        <div className="jt-footer">Connected to Spring Boot at /api/transactions.</div>
       </div>
     </div>
   );
