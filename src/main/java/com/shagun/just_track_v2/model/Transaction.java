@@ -1,7 +1,7 @@
 package com.shagun.just_track_v2.model;
 
 import java.time.LocalDate;
-
+import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,7 +13,7 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @CreationTimestamp
     private LocalDate createdDate;
     private String description;
     private String category;
