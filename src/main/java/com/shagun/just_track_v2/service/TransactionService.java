@@ -17,9 +17,18 @@ public class TransactionService {
     {
         return repository.findAll();
     }
+    public Transaction getTransactionById(Long id)
+    {
+        return repository.findById(id).orElseThrow(() -> new RuntimeException("Product not found with id, "+ id));
+    }
     public Transaction createTransaction(Transaction transaction)
     {
         return repository.save(transaction);
+    }
+    public void deleteTransaction(Long id)
+    {
+        Transaction transaction = getTransactionById(id);
+        repository.delete(transaction);
     }
     
 }
