@@ -109,13 +109,13 @@ export default function JustTrackBudgetTracker() {
     const prev = transactions;
     // optimistic update, rolled back on failure
     setTransactions((cur) => cur.filter((t) => t.id !== id));
-    // try {
-    //   // DELETE /api/transactions/{id}
-    //   await transactionApi.delete(id);
-    // } catch (err) {
-    //   setTransactions(prev);
-    //   console.error("Failed to delete transaction", err);
-    // }
+     try {
+     // DELETE /api/transactions/{id}
+    await transactionApi.delete(id);
+    } catch (err) {
+      setTransactions(prev);
+      console.error("Failed to delete transaction", err);
+     }
   }
 
   const totalIncome = transactions.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
