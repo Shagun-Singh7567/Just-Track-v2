@@ -7,7 +7,7 @@ import lombok.Data;
 
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "railway")
 @Data
 public class Transaction {
     @Id
