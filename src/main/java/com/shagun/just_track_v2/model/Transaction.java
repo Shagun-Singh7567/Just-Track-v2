@@ -14,6 +14,7 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @CreationTimestamp
+    @Column(name = "createdDate")
     private LocalDate createdDate;
     private String description;
     private String category;
