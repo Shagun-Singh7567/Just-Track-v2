@@ -14,7 +14,7 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @CreationTimestamp
-    @Column(name = "createdDate")
+    @Column(name = "createddate")
     private LocalDate createdDate;
     private String description;
     private String category;
