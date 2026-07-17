@@ -9,5 +9,4 @@ public class JustTrackV2Application {
 	public static void main(String[] args) {
 		SpringApplication.run(JustTrackV2Application.class, args);
 	}
-
 }
