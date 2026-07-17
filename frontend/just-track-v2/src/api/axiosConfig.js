@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://just-track-v2-production.up.railway.app/api',
   headers: {
     'Content-Type': 'application/json',
   },
