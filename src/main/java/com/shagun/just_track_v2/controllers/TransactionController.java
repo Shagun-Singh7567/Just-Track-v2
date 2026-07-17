@@ -39,8 +39,4 @@ public class TransactionController {
         service.deleteTransaction(id);
         return ResponseEntity.noContent().build();
     }
-    {
-
-    }
-    
 }
