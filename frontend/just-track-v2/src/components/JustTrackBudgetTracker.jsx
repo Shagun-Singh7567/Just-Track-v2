@@ -1,19 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2, Sun, Moon, Wallet } from "lucide-react";
-import { transactionApi } from "./api/transactionApi";
-
-/**
- * JUST TRACK — wired to a Spring Boot REST API.
- *
- * Backend endpoints used:
- *   GET    /api/transactions          -> list all entries
- *   POST   /api/transactions          -> create an entry
- *   DELETE /api/transactions/{id}     -> remove an entry
- *
- * Shape of a transaction matches the JPA entity:
- *   { id, createdDate, description, category, type: 'INCOME' | 'EXPENSE', amount }
- *
- */
+import { transactionApi } from "../api/transactionApi";
 
 const CATEGORIES = [
   "Salary",
@@ -29,9 +16,8 @@ const CATEGORIES = [
 const currency = (n) =>
   (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function JustTrackBudgetTracker() {
+export default function JustTrackBudgetTracker({ onLogout }) {
   const [dark, setDark] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,13 +95,13 @@ export default function JustTrackBudgetTracker() {
     const prev = transactions;
     // optimistic update, rolled back on failure
     setTransactions((cur) => cur.filter((t) => t.id !== id));
-     try {
-     // DELETE /api/transactions/{id}
-    await transactionApi.delete(id);
+    try {
+      // DELETE /api/transactions/{id}
+      await transactionApi.delete(id);
     } catch (err) {
       setTransactions(prev);
       console.error("Failed to delete transaction", err);
-     }
+    }
   }
 
   const totalIncome = transactions.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
@@ -285,6 +271,20 @@ export default function JustTrackBudgetTracker() {
 
         .jt-footer { text-align: center; font-size: 11px; color: var(--ink-soft); margin-top: 30px; letter-spacing: 0.5px; }
 
+        .jt-signout-btn {
+          border: 1px solid var(--rule);
+          background: var(--surface);
+          color: var(--ink-soft);
+          border-radius: 6px;
+          padding: 8px 14px;
+          font-size: 13px;
+          font-family: 'Inter';
+          cursor: pointer;
+          transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .jt-signout-btn:hover { color: var(--expense); border-color: var(--expense); }
+        .jt-signout-btn:focus-visible { outline: 2px solid var(--margin); outline-offset: 1px; }
+
         @media (max-width: 520px) {
           .jt-form-grid { grid-template-columns: 1fr; }
           .jt-row { grid-template-columns: 60px 1fr 78px; }
@@ -301,14 +301,24 @@ export default function JustTrackBudgetTracker() {
               <span className="jt-sub">personal ledger</span>
             </span>
           </div>
-          <button
-            className="jt-stamp-btn"
-            onClick={() => setDark((d) => !d)}
-            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-            title={dark ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {dark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              className="jt-stamp-btn"
+              onClick={() => setDark((d) => !d)}
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              className="jt-signout-btn"
+              onClick={onLogout}
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         <div className="jt-hero">

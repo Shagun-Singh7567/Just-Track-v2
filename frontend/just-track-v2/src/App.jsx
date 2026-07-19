@@ -1,9 +1,15 @@
-import JustTrackBudgetTracker from "./JustTrackBudgetTracker";
-function App() {
+import { useState } from "react";
+import JustTrackBudgetTracker from "./components/JustTrackBudgetTracker";
+import Login from "./components/Login";
 
-  return (
-    <JustTrackBudgetTracker />
-  )
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  if (isAuthenticated) {
+    return <JustTrackBudgetTracker onLogout={() => setIsAuthenticated(false)} />;
+  }
+
+  return <Login onLogin={() => setIsAuthenticated(true)} />;
 }
 
-export default App
+export default App;
