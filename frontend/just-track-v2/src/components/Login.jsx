@@ -310,7 +310,5 @@ const inputStyle = {
 };
 
 function MainApp({ onLogout }) {
-  return (
-    <JustTrackBudgetTracker />
-  );
+  return <JustTrackBudgetTracker onLogout={onLogout} />;
 }
