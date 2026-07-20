@@ -1,15 +1,28 @@
-import { useState } from "react";
-import JustTrackBudgetTracker from "./components/JustTrackBudgetTracker";
-import Login from "./components/Login";
+import React, { useState } from "react";
+import LoginPage from "./components/Login";
+import SignupPage from "./components/SignUp";
 
-function App() {
+export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [view, setView] = useState("login"); // "login" | "signup"
+
+  const handleLogin = () => setIsAuthenticated(true);
+  const handleLogout = () => setIsAuthenticated(false);
+  const handleSignup = () => setIsAuthenticated(true); // for now, treat signup as instant login
 
   if (isAuthenticated) {
-    return <JustTrackBudgetTracker onLogout={() => setIsAuthenticated(false)} />;
+    return <MainApp onLogout={handleLogout} />;
   }
 
-  return <Login onLogin={() => setIsAuthenticated(true)} />;
+  return view === "signup" ? (
+    <SignupPage
+      onSignup={handleSignup}
+      onGoToLogin={() => setView("login")}
+    />
+  ) : (
+    <LoginPage
+      onLogin={handleLogin}
+      onCreateAccount={() => setView("signup")}
+    />
+  );
 }
-
-export default App;

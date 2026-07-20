@@ -1,31 +1,13 @@
-import React, { useState, useEffect } from "react";
-import JustTrackBudgetTracker from "./JustTrackBudgetTracker";
-import SignupPage from "./SignUp";
+import React, { useState } from "react";
 
 /* ------------------------------------------------------------------
-   JUST TRACK — Auth gate + Login page (frontend only, no API calls)
+   JUST TRACK — Signup page (frontend only, no API calls)
    ------------------------------------------------------------------
-   How the gating works:
-   1. `isAuthenticated` lives in the top-level <App/> component.
-   2. While false, we render <LoginPage/>. While true, we render
-      <MainApp/> (your real dashboard/router).
-   3. LoginPage calls `onLogin()` when the (fake) sign-in succeeds.
-   4. This file has NO backend calls — see the comments at the bottom
-      for exactly where to wire in your Spring Boot /api/auth/login
-      and JWT storage later.
-
-   FIXES APPLIED:
-   - Two-column layout now actually responds to screen width. Previously
-     the wrapper had both an inline `gridTemplateColumns: "1fr"` style
-     AND a `md:grid-cols-2` Tailwind class. Inline styles always beat
-     CSS classes, so the two-column layout never appeared at any width.
-     Fixed by moving the grid rule into a real <style> block with a
-     media query, and removing the inline style.
-   - "Create one" link no longer navigates to "#"/top of page — it now
-     calls a passed-in onCreateAccount handler via preventDefault.
-   - Removed unused COLORS.gold (only goldDark was ever used).
-   - Trimmed email input before validating so whitespace-only entries
-     are caught.
+   Matches the visual language of LoginPage.jsx:
+   - Same two-column ledger/paper layout (dark brand panel + paper form)
+   - Same COLORS token set, fonts, input styling, spacing rhythm
+   - No backend calls — see notes at the bottom for where to wire in
+     your Spring Boot /api/auth/register call later.
 ------------------------------------------------------------------- */
 
 const COLORS = {
@@ -38,54 +20,11 @@ const COLORS = {
   textDark: "#20241F",
 };
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [view, setView] = useState("login"); // "login" | "signup"
-
-  useEffect(() => {
-    const flag = window.sessionStorage?.getItem("jt_demo_auth");
-    if (flag === "true") setIsAuthenticated(true);
-  }, []);
-
-  const handleLogin = () => {
-    window.sessionStorage?.setItem("jt_demo_auth", "true");
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    window.sessionStorage?.removeItem("jt_demo_auth");
-    setIsAuthenticated(false);
-  };
-
-  const handleSignup = () => {
-    window.sessionStorage?.setItem("jt_demo_auth", "true");
-    setIsAuthenticated(true);
-  };
-
-  if (isAuthenticated) {
-    return <MainApp onLogout={handleLogout} />;
-  }
-
-  return view === "signup" ? (
-    <SignupPage
-      onSignup={handleSignup}
-      onGoToLogin={() => setView("login")}
-    />
-  ) : (
-    <LoginPage
-      onLogin={handleLogin}
-      onCreateAccount={() => setView("signup")}
-    />
-  );
-}
-
-/* ------------------------------------------------------------------
-   LOGIN PAGE
-------------------------------------------------------------------- */
-
-function LoginPage({ onLogin, onCreateAccount }) {
+export default function SignupPage({ onSignup, onGoToLogin }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -93,44 +32,63 @@ function LoginPage({ onLogin, onCreateAccount }) {
     e.preventDefault();
     setError("");
 
+    const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) {
-      setError("Enter both an email and a password.");
+
+    if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
+      setError("Fill in every field to open your ledger.");
+      return;
+    }
+
+    // Very light client-side email shape check. Real validation should
+    // still happen server-side.
+    const emailLooksValid = /\S+@\S+\.\S+/.test(trimmedEmail);
+    if (!emailLooksValid) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password needs to be at least 8 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
       return;
     }
 
     // ---- FRONTEND-ONLY STUB ----
     // No network call here. Replace this block with your real
-    // POST /api/auth/login call — see notes at the bottom of the file.
-    // When you wire in the real call, remember to branch on failure
-    // (e.g. 401 -> setError("Invalid email or password.")) instead of
-    // always calling onLogin() like this stub does.
+    // POST /api/auth/register call — see notes at the bottom of the file.
+    // On failure (e.g. 409 email already registered), setError(...)
+    // instead of always calling onSignup() like this stub does.
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      onLogin();
+      onSignup?.({ name: trimmedName, email: trimmedEmail });
     }, 500);
   };
 
   return (
-    <div className="jt-login-grid" style={{ color: COLORS.textDark }}>
+    <div className="jt-signup-grid" style={{ color: COLORS.textDark }}>
       {/* Scoped responsive grid rule — inline styles can't respond to
           media queries, so this lives in a real stylesheet block. */}
       <style>{`
-        .jt-login-grid {
+        .jt-signup-grid {
           min-height: 100vh;
           display: grid;
           grid-template-columns: 1fr;
           font-family: 'Inter', system-ui, sans-serif;
         }
         @media (min-width: 768px) {
-          .jt-login-grid {
+          .jt-signup-grid {
             grid-template-columns: 1fr 1fr;
           }
         }
       `}</style>
 
-      {/* LEFT — brand strip + open slot for a component you'll add later */}
+      {/* LEFT — brand strip, same slot pattern as LoginPage */}
       <div
         style={{
           background: COLORS.ink,
@@ -181,7 +139,7 @@ function LoginPage({ onLogin, onCreateAccount }) {
         </div>
       </div>
 
-      {/* RIGHT — login form on paper */}
+      {/* RIGHT — signup form on paper */}
       <div
         style={{
           background: COLORS.paper,
@@ -202,11 +160,22 @@ function LoginPage({ onLogin, onCreateAccount }) {
               marginBottom: "0.25rem",
             }}
           >
-            Welcome back
+            Open a ledger
           </h1>
           <p style={{ color: COLORS.sage, fontSize: "0.9rem", marginBottom: "2rem" }}>
-            Sign in to open your ledger.
+            Create an account to start tracking.
           </p>
+
+          <Field label="Name">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jordan Rivera"
+              autoComplete="name"
+              style={inputStyle}
+            />
+          </Field>
 
           <Field label="Email">
             <input
@@ -224,8 +193,19 @@ function LoginPage({ onLogin, onCreateAccount }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Confirm password">
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              autoComplete="current-password"
+              autoComplete="new-password"
               style={inputStyle}
             />
           </Field>
@@ -259,7 +239,7 @@ function LoginPage({ onLogin, onCreateAccount }) {
               marginTop: "0.5rem",
             }}
           >
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? "Creating account…" : "Create account"}
           </button>
 
           <div
@@ -273,16 +253,16 @@ function LoginPage({ onLogin, onCreateAccount }) {
               justifyContent: "space-between",
             }}
           >
-            <span>No account yet?</span>
+            <span>Already have an account?</span>
             <a
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                onCreateAccount?.();
+                onGoToLogin?.();
               }}
               style={{ color: COLORS.goldDark }}
             >
-              Create one
+              Sign in
             </a>
           </div>
         </form>
@@ -324,6 +304,30 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-function MainApp({ onLogout }) {
-  return <JustTrackBudgetTracker onLogout={onLogout} />;
-}
+/* ------------------------------------------------------------------
+   WIRING NOTES — connecting to your Spring Boot backend
+
+   1. In App.jsx, add a third view state alongside login/authenticated,
+      e.g. const [view, setView] = useState("login"); // "login" | "signup" | "app"
+
+   2. Render:
+        view === "signup" ? <SignupPage onSignup={handleSignup} onGoToLogin={() => setView("login")} /> :
+        view === "login"  ? <LoginPage onLogin={handleLogin} onCreateAccount={() => setView("signup")} /> :
+        <MainApp onLogout={handleLogout} />
+
+   3. Replace the setTimeout stub in handleSubmit with:
+
+        const res = await axios.post("/api/auth/register", {
+          name: trimmedName,
+          email: trimmedEmail,
+          password,
+        });
+        // On 201: store the returned JWT the same way your login flow
+        // does (AuthContext / localStorage), then call onSignup().
+        // On 409 (email taken): setError("An account with this email already exists.")
+        // On 400 (validation): surface the server's message.
+
+   4. Password rules here (min 8 chars) are just a friendly client-side
+      nudge — your BCrypt/Spring Security validation on the backend is
+      the real source of truth, so keep both in sync.
+------------------------------------------------------------------- */
