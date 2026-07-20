@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import JustTrackBudgetTracker from "./JustTrackBudgetTracker";
+import SignupPage from "./SignUp";
 
 /* ------------------------------------------------------------------
    JUST TRACK — Auth gate + Login page (frontend only, no API calls)
@@ -39,9 +40,8 @@ const COLORS = {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [view, setView] = useState("login"); // "login" | "signup"
 
-  // OPTION: persist "logged in" state across refreshes for the demo.
-  // In the real app this becomes "is there a valid JWT in storage?"
   useEffect(() => {
     const flag = window.sessionStorage?.getItem("jt_demo_auth");
     if (flag === "true") setIsAuthenticated(true);
@@ -57,10 +57,25 @@ export default function App() {
     setIsAuthenticated(false);
   };
 
-  return isAuthenticated ? (
-    <MainApp onLogout={handleLogout} />
+  const handleSignup = () => {
+    window.sessionStorage?.setItem("jt_demo_auth", "true");
+    setIsAuthenticated(true);
+  };
+
+  if (isAuthenticated) {
+    return <MainApp onLogout={handleLogout} />;
+  }
+
+  return view === "signup" ? (
+    <SignupPage
+      onSignup={handleSignup}
+      onGoToLogin={() => setView("login")}
+    />
   ) : (
-    <LoginPage onLogin={handleLogin} />
+    <LoginPage
+      onLogin={handleLogin}
+      onCreateAccount={() => setView("signup")}
+    />
   );
 }
 
