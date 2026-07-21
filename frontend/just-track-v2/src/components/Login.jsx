@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Ferrofluid from "./Ferrofluid";
 import JustTrackBudgetTracker from "./JustTrackBudgetTracker";
 import SignupPage from "./SignUp";
 
@@ -26,6 +27,11 @@ import SignupPage from "./SignUp";
    - Removed unused COLORS.gold (only goldDark was ever used).
    - Trimmed email input before validating so whitespace-only entries
      are caught.
+   - FaultyTerminal now renders as a fixed, full-viewport background
+     layer behind the entire login page (both columns), instead of a
+     small 100px box tucked into the left panel. The ink panel is now
+     a semi-transparent overlay so the terminal effect reads through
+     it; the paper panel stays opaque since it hosts the form.
 ------------------------------------------------------------------- */
 
 const COLORS = {
@@ -113,11 +119,21 @@ function LoginPage({ onLogin, onCreateAccount }) {
   };
 
   return (
-    <div className="jt-login-grid" style={{ color: COLORS.textDark }}>
+    <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
       {/* Scoped responsive grid rule — inline styles can't respond to
           media queries, so this lives in a real stylesheet block. */}
       <style>{`
+        .jt-login-bg {
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 0;
+          background: ${COLORS.ink};
+        }
         .jt-login-grid {
+          position: relative;
+          z-index: 1;
           min-height: 100vh;
           display: grid;
           grid-template-columns: 1fr;
@@ -130,162 +146,152 @@ function LoginPage({ onLogin, onCreateAccount }) {
         }
       `}</style>
 
-      {/* LEFT — brand strip + open slot for a component you'll add later */}
-      <div
-        style={{
-          background: COLORS.ink,
-          color: COLORS.paper,
-          display: "flex",
-          flexDirection: "column",
-          padding: "3rem 2.5rem",
-          minHeight: "280px",
-        }}
-      >
-        <div style={{ marginBottom: "2rem" }}>
-          <div
-            style={{
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontSize: "1.75rem",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Just Track
-          </div>
-          <div
-            style={{
-              color: COLORS.sage,
-              fontSize: "0.85rem",
-              marginTop: "0.35rem",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            personal finance, tracked
-          </div>
-        </div>
+      {/* Full-viewport background layer */}
+      <div className="jt-login-bg">
+        <Ferrofluid style={{ width: "100%", height: "100%" }} />
+      </div>
 
-        {/* SLOT: drop a chart, illustration, or any other component here later */}
+      <div className="jt-login-grid" style={{ color: COLORS.textDark }}>
         <div
           style={{
-            flex: 1,
-            border: `1px dashed ${COLORS.inkLine}`,
-            borderRadius: "4px",
+            background: "rgba(20, 32, 29, 0.55)",
+            color: COLORS.paper,
+            display: "flex",
+            flexDirection: "column",
+            padding: "3rem 2.5rem",
+            minHeight: "280px",
+          }}
+        />
+
+        {/* RIGHT — login form on paper */}
+        <div
+          style={{
+            background: COLORS.paper,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: COLORS.sage,
-            fontSize: "0.8rem",
-            fontFamily: "'JetBrains Mono', monospace",
+            padding: "3rem 1.5rem",
           }}
         >
-          {/* <YourComponent /> */}
-        </div>
-      </div>
-
-      {/* RIGHT — login form on paper */}
-      <div
-        style={{
-          background: COLORS.paper,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "3rem 1.5rem",
-        }}
-      >
-        <form
-          onSubmit={handleSubmit}
-          style={{ width: "100%", maxWidth: "360px" }}
-        >
-          <h1
-            style={{
-              fontFamily: "'Fraunces', Georgia, serif",
-              fontSize: "1.5rem",
-              marginBottom: "0.25rem",
-            }}
+          <form
+            onSubmit={handleSubmit}
+            style={{ width: "100%", maxWidth: "360px" }}
           >
-            Welcome back
-          </h1>
-          <p style={{ color: COLORS.sage, fontSize: "0.9rem", marginBottom: "2rem" }}>
-            Sign in to open your ledger.
-          </p>
+            <div style={{ marginBottom: "2rem", textAlign: "left" }}>
+              <div
+                style={{
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontSize: "1.75rem",
+                  letterSpacing: "0.01em",
+                  color: COLORS.ink,
+                }}
+              >
+                Just Track
+              </div>
+              <div
+                style={{
+                  color: COLORS.sage,
+                  fontSize: "0.85rem",
+                  marginTop: "0.35rem",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                personal finance, tracked
+              </div>
+            </div>
 
-          <Field label="Email">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label="Password">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              style={inputStyle}
-            />
-          </Field>
-
-          {error && (
-            <p
+            <h1
               style={{
-                color: "#8C2F23",
-                fontSize: "0.85rem",
-                margin: "0 0 1rem",
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontSize: "1.5rem",
+                marginBottom: "0.25rem",
               }}
             >
-              {error}
+              Welcome back
+            </h1>
+            <p style={{ color: COLORS.sage, fontSize: "0.9rem", marginBottom: "2rem" }}>
+              Sign in to open your ledger.
             </p>
-          )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              width: "100%",
-              padding: "0.75rem 1rem",
-              background: COLORS.ink,
-              color: COLORS.paper,
-              border: "none",
-              borderRadius: "2px",
-              fontSize: "0.95rem",
-              cursor: submitting ? "default" : "pointer",
-              opacity: submitting ? 0.7 : 1,
-              fontFamily: "'Inter', system-ui, sans-serif",
-              marginTop: "0.5rem",
-            }}
-          >
-            {submitting ? "Signing in…" : "Sign in"}
-          </button>
+            <Field label="Email">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                style={inputStyle}
+              />
+            </Field>
 
-          <div
-            style={{
-              marginTop: "1.5rem",
-              paddingTop: "1.25rem",
-              borderTop: `1px solid ${COLORS.paperLine}`,
-              fontSize: "0.85rem",
-              color: COLORS.sage,
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>No account yet?</span>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                onCreateAccount?.();
+            <Field label="Password">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                style={inputStyle}
+              />
+            </Field>
+
+            {error && (
+              <p
+                style={{
+                  color: "#8C2F23",
+                  fontSize: "0.85rem",
+                  margin: "0 0 1rem",
+                }}
+              >
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                width: "100%",
+                padding: "0.75rem 1rem",
+                background: COLORS.ink,
+                color: COLORS.paper,
+                border: "none",
+                borderRadius: "2px",
+                fontSize: "0.95rem",
+                cursor: submitting ? "default" : "pointer",
+                opacity: submitting ? 0.7 : 1,
+                fontFamily: "'Inter', system-ui, sans-serif",
+                marginTop: "0.5rem",
               }}
-              style={{ color: COLORS.goldDark }}
             >
-              Create one
-            </a>
-          </div>
-        </form>
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                paddingTop: "1.25rem",
+                borderTop: `1px solid ${COLORS.paperLine}`,
+                fontSize: "0.85rem",
+                color: COLORS.sage,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>No account yet?</span>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onCreateAccount?.();
+                }}
+                style={{ color: COLORS.goldDark }}
+              >
+                Create one
+              </a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
