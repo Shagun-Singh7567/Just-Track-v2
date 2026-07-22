@@ -21,12 +21,12 @@ public class UserController {
     @Autowired
     UserService service;
 
-    @PostMapping("/transactions")
+    @PostMapping("/users")
     public ResponseEntity<User> createUser(@RequestBody User user)
     {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(user));
     }
-    @DeleteMapping("/transactions/{id}")
+    @DeleteMapping("/users/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id)
     {
         service.deleteUser(id);
