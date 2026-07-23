@@ -15,6 +15,7 @@ public class UserSettings {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "theme", nullable = false)
     private Theme theme;
     @Column(name = "currency_code", nullable = false, length = 3)
     private Currency currency;

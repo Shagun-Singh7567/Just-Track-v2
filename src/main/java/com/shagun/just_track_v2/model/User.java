@@ -16,9 +16,10 @@ public class User {
     @Column(name = "user_id")
     private Long id;
     @CreationTimestamp
-    @Column(name = "createddate")
+    @Column(name = "created_date")
     private LocalDate createdDate;
     private String name;
+    @Column(name = "email_address")
     private String emailAddress;
     private String password;
 }
