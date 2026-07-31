@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:5173", "https://just-track-v2.vercel.app"})
 public class TransactionController {
     @Autowired
