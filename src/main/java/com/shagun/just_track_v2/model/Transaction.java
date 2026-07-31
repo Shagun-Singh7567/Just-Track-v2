@@ -5,9 +5,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
 import lombok.Data;
 
-
 @Entity
-@Table(name = "railway")
+@Table(name = "transaction")
 @Data
 public class Transaction {
     @Id
@@ -22,5 +21,7 @@ public class Transaction {
     private TransactionType type;
     private double amount;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
-    
