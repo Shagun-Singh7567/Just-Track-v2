@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Ferrofluid from "./Ferrofluid";
-import JustTrackBudgetTracker from "./JustTrackBudgetTracker";
-import SignupPage from "./SignUp";
+import { authApi } from "../api/authApi";
+import { authStorage } from "../api/authStorage";
 
 /* ------------------------------------------------------------------
-   JUST TRACK — Auth gate + Login page (frontend only, no API calls)
-   ------------------------------------------------------------------
-   How the gating works:
-   1. `isAuthenticated` lives in the top-level <App/> component.
-   2. While false, we render <LoginPage/>. While true, we render
-      <MainApp/> (your real dashboard/router).
-   3. LoginPage calls `onLogin()` when the (fake) sign-in succeeds.
-   4. This file has NO backend calls — see the comments at the bottom
-      for exactly where to wire in your Spring Boot /api/auth/login
-      and JWT storage later.
+   JUST TRACK — Login page
 
-   FIXES APPLIED:
+   Auth gating (isAuthenticated, current view, logout, etc.) lives in
+   the top-level App.jsx — that's the single source of truth now. This
+   file only renders the login form and calls onLogin(user) once
+   POST /auth/login succeeds and the JWT has been stored.
+
+   FIXES APPLIED (earlier):
    - Two-column layout now actually responds to screen width. Previously
      the wrapper had both an inline `gridTemplateColumns: "1fr"` style
      AND a `md:grid-cols-2` Tailwind class. Inline styles always beat
@@ -44,58 +40,17 @@ const COLORS = {
   textDark: "#20241F",
 };
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [view, setView] = useState("login"); // "login" | "signup"
-
-  useEffect(() => {
-    const flag = window.sessionStorage?.getItem("jt_demo_auth");
-    if (flag === "true") setIsAuthenticated(true);
-  }, []);
-
-  const handleLogin = () => {
-    window.sessionStorage?.setItem("jt_demo_auth", "true");
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    window.sessionStorage?.removeItem("jt_demo_auth");
-    setIsAuthenticated(false);
-  };
-
-  const handleSignup = () => {
-    window.sessionStorage?.setItem("jt_demo_auth", "true");
-    setIsAuthenticated(true);
-  };
-
-  if (isAuthenticated) {
-    return <MainApp onLogout={handleLogout} />;
-  }
-
-  return view === "signup" ? (
-    <SignupPage
-      onSignup={handleSignup}
-      onGoToLogin={() => setView("login")}
-    />
-  ) : (
-    <LoginPage
-      onLogin={handleLogin}
-      onCreateAccount={() => setView("signup")}
-    />
-  );
-}
-
 /* ------------------------------------------------------------------
    LOGIN PAGE
 ------------------------------------------------------------------- */
 
-function LoginPage({ onLogin, onCreateAccount }) {
+export default function LoginPage({ onLogin, onCreateAccount }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -105,17 +60,23 @@ function LoginPage({ onLogin, onCreateAccount }) {
       return;
     }
 
-    // ---- FRONTEND-ONLY STUB ----
-    // No network call here. Replace this block with your real
-    // POST /api/auth/login call — see notes at the bottom of the file.
-    // When you wire in the real call, remember to branch on failure
-    // (e.g. 401 -> setError("Invalid email or password.")) instead of
-    // always calling onLogin() like this stub does.
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      // POST /auth/login -> AuthResponse { token, email, name }
+      const res = await authApi.login(trimmedEmail, password);
+      authStorage.setSession(res.data);
+      onLogin(res.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError("Invalid email or password.");
+      } else if (err.code === "ECONNABORTED" || !err.response) {
+        setError("Couldn't reach the server. Is the backend running?");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
       setSubmitting(false);
-      onLogin();
-    }, 500);
+    }
   };
 
   return (
@@ -329,7 +290,3 @@ const inputStyle = {
   outline: "none",
   boxSizing: "border-box",
 };
-
-function MainApp({ onLogout }) {
-  return <JustTrackBudgetTracker onLogout={onLogout} />;
-}

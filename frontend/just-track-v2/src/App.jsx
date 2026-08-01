@@ -1,14 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import LoginPage from "./components/Login";
 import SignupPage from "./components/SignUp";
+import JustTrackBudgetTracker from "./components/JustTrackBudgetTracker";
+import { authStorage } from "./api/authStorage";
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Restore session on load if a token is already sitting in sessionStorage
+  // (e.g. page refresh) rather than always bouncing back to the login form.
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    authStorage.isAuthenticated()
+  );
   const [view, setView] = useState("login"); // "login" | "signup"
 
+  const handleLogout = useCallback(() => {
+    authStorage.clear();
+    setIsAuthenticated(false);
+    setView("login");
+  }, []);
+
+  // axiosConfig dispatches this when any request comes back 401 (expired
+  // or invalid token), so an expired session boots back to login instead
+  // of leaving the dashboard stuck on a silent "failed to load" error.
+  useEffect(() => {
+    window.addEventListener("jt:unauthorized", handleLogout);
+    return () => window.removeEventListener("jt:unauthorized", handleLogout);
+  }, [handleLogout]);
+
+  // authApi.login/signup already stored the session before calling these,
+  // so all that's left is flipping the view.
   const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
-  const handleSignup = () => setIsAuthenticated(true); // for now, treat signup as instant login
+  const handleSignup = () => setIsAuthenticated(true);
 
   if (isAuthenticated) {
     return <MainApp onLogout={handleLogout} />;
@@ -25,4 +46,8 @@ export default function App() {
       onCreateAccount={() => setView("signup")}
     />
   );
+}
+
+function MainApp({ onLogout }) {
+  return <JustTrackBudgetTracker onLogout={onLogout} />;
 }
