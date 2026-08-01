@@ -14,7 +14,7 @@ import com.shagun.just_track_v2.model.UserSettings;
 import com.shagun.just_track_v2.service.UserSettingsService;
 
     @RestController
-@RequestMapping("/api")
+@RequestMapping
 @CrossOrigin(origins = {"http://localhost:5173", "https://just-track-v2.vercel.app"})
 public class UserSettingsController {
     @Autowired
