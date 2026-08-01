@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = {"http://localhost:5173", "https://just-track-v2.vercel.app"})
 @RequiredArgsConstructor
 public class AuthController {
 
