@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Trash2, Sun, Moon, Wallet } from "lucide-react";
 import { transactionApi } from "../api/transactionApi";
+import { useSettings } from "../context/SettingsContext";
 
 const CATEGORIES = [
   "Salary",
@@ -13,12 +14,18 @@ const CATEGORIES = [
   "Other",
 ];
 
-const currency = (n) =>
-  (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
+// A curated, common subset of the full ISO 4217 list the backend's Currency
+// enum supports — a 150+ option dropdown isn't great UX, so this covers the
+// currencies most users will actually want. Any code the backend enum
+// supports still works if set some other way; this just bounds the picker.
+const CURRENCIES = [
+  "USD", "EUR", "GBP", "JPY", "INR", "AUD", "CAD", "CHF", "CNY", "HKD",
+  "SGD", "NZD", "SEK", "NOK", "DKK", "ZAR", "AED", "SAR", "BRL", "MXN",
+  "KRW", "THB", "IDR", "MYR", "PHP", "VND", "PKR", "BDT", "LKR", "NPR",
+];
 
 export default function JustTrackBudgetTracker({ onLogout }) {
-  const [dark, setDark] = useState(false);
+  const { isDark, setTheme, currencyCode, setCurrencyCode, formatCurrency, error: settingsError } = useSettings();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -38,10 +45,10 @@ export default function JustTrackBudgetTracker({ onLogout }) {
   // this, the browser's default white body background shows through as a
   // white boundary around the app (very visible in dark mode). Keep body in sync.
   useEffect(() => {
-    document.body.style.background = dark ? "#14171C" : "#FAF7F0";
+    document.body.style.background = isDark ? "#14171C" : "#FAF7F0";
     document.body.style.margin = "0";
-    document.documentElement.style.background = dark ? "#14171C" : "#FAF7F0";
-  }, [dark]);
+    document.documentElement.style.background = isDark ? "#14171C" : "#FAF7F0";
+  }, [isDark]);
 
   // GET /api/transactions on mount
   useEffect(() => {
@@ -132,7 +139,7 @@ export default function JustTrackBudgetTracker({ onLogout }) {
   const maxTally = Math.max(...categoryTally.map((c) => c.total), 1);
 
   return (
-    <div className={dark ? "jt-root jt-dark" : "jt-root jt-light"}>
+    <div className={isDark ? "jt-root jt-dark" : "jt-root jt-light"}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -271,6 +278,20 @@ export default function JustTrackBudgetTracker({ onLogout }) {
 
         .jt-footer { text-align: center; font-size: 11px; color: var(--ink-soft); margin-top: 30px; letter-spacing: 0.5px; }
 
+        .jt-currency-select {
+          border: 1px solid var(--rule);
+          background: var(--surface);
+          color: var(--ink);
+          border-radius: 6px;
+          padding: 8px 10px;
+          font-size: 13px;
+          font-family: 'JetBrains Mono', monospace;
+          cursor: pointer;
+        }
+        .jt-currency-select:focus-visible {
+          outline: 2px solid var(--margin); outline-offset: 1px;
+        }
+
         .jt-signout-btn {
           border: 1px solid var(--rule);
           background: var(--surface);
@@ -302,13 +323,24 @@ export default function JustTrackBudgetTracker({ onLogout }) {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <select
+              className="jt-currency-select"
+              value={currencyCode}
+              onChange={(e) => setCurrencyCode(e.target.value)}
+              aria-label="Currency"
+              title="Currency"
+            >
+              {CURRENCIES.map((code) => (
+                <option key={code} value={code}>{code}</option>
+              ))}
+            </select>
             <button
               className="jt-stamp-btn"
-              onClick={() => setDark((d) => !d)}
-              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setTheme(isDark ? "LIGHT" : "DARK")}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {dark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <button
               className="jt-signout-btn"
@@ -321,17 +353,19 @@ export default function JustTrackBudgetTracker({ onLogout }) {
           </div>
         </div>
 
+        {settingsError && <div className="jt-error" style={{ marginBottom: "14px" }}>{settingsError}</div>}
+
         <div className="jt-hero">
           <div className="jt-hero-label">Current balance</div>
-          <div className="jt-hero-balance jt-mono">{currency(balance)}</div>
+          <div className="jt-hero-balance jt-mono">{formatCurrency(balance)}</div>
           <div className="jt-hero-row">
             <div className="jt-hero-stat">
               Income
-              <span className="jt-mono amt" style={{ color: "var(--income)" }}>{currency(totalIncome)}</span>
+              <span className="jt-mono amt" style={{ color: "var(--income)" }}>{formatCurrency(totalIncome)}</span>
             </div>
             <div className="jt-hero-stat">
               Expenses
-              <span className="jt-mono amt" style={{ color: "var(--expense)" }}>{currency(-totalExpense)}</span>
+              <span className="jt-mono amt" style={{ color: "var(--expense)" }}>{formatCurrency(-totalExpense)}</span>
             </div>
             <div className="jt-hero-stat">
               Entries
@@ -433,10 +467,10 @@ export default function JustTrackBudgetTracker({ onLogout }) {
                     <span className="cat">{t.category}</span>
                   </div>
                   <div className={"amt jt-mono " + (t.type === "INCOME" ? "income" : "expense")}>
-                    {t.type === "INCOME" ? "+" : "−"}{currency(t.amount).replace("$", "")}
+                    {t.type === "INCOME" ? "+" : "−"}{formatCurrency(t.amount)}
                   </div>
                   <div className="bal jt-mono">
-                    {currency(t.running)}
+                    {formatCurrency(t.running)}
                     <button className="del" onClick={() => handleDelete(t.id)} aria-label={`Delete ${t.description}`}>
                       <Trash2 size={14} />
                     </button>
@@ -456,7 +490,7 @@ export default function JustTrackBudgetTracker({ onLogout }) {
                 <div className="jt-tally-track">
                   <div className="jt-tally-fill" style={{ width: `${(c.total / maxTally) * 100}%` }} />
                 </div>
-                <div className="jt-tally-amt jt-mono">{currency(c.total)}</div>
+                <div className="jt-tally-amt jt-mono">{formatCurrency(c.total)}</div>
               </div>
             ))}
           </div>
