@@ -3,6 +3,7 @@ import LoginPage from "./components/Login";
 import SignupPage from "./components/SignUp";
 import JustTrackBudgetTracker from "./components/JustTrackBudgetTracker";
 import { authStorage } from "./api/authStorage";
+import { SettingsProvider } from "./context/SettingsContext";
 
 export default function App() {
   // Restore session on load if a token is already sitting in sessionStorage
@@ -31,20 +32,22 @@ export default function App() {
   const handleLogin = () => setIsAuthenticated(true);
   const handleSignup = () => setIsAuthenticated(true);
 
-  if (isAuthenticated) {
-    return <MainApp onLogout={handleLogout} />;
-  }
-
-  return view === "signup" ? (
-    <SignupPage
-      onSignup={handleSignup}
-      onGoToLogin={() => setView("login")}
-    />
-  ) : (
-    <LoginPage
-      onLogin={handleLogin}
-      onCreateAccount={() => setView("signup")}
-    />
+  return (
+    <SettingsProvider isAuthenticated={isAuthenticated}>
+      {isAuthenticated ? (
+        <MainApp onLogout={handleLogout} />
+      ) : view === "signup" ? (
+        <SignupPage
+          onSignup={handleSignup}
+          onGoToLogin={() => setView("login")}
+        />
+      ) : (
+        <LoginPage
+          onLogin={handleLogin}
+          onCreateAccount={() => setView("signup")}
+        />
+      )}
+    </SettingsProvider>
   );
 }
 
