@@ -52,5 +52,10 @@ export default function App() {
 }
 
 function MainApp({ onLogout }) {
-  return <JustTrackBudgetTracker onLogout={onLogout} />;
+  return (
+    <div className="app-shell">
+      <Navbar onLogout={onLogout} />
+      <JustTrackBudgetTracker onLogout={onLogout} />
+    </div>
+  );
 }
