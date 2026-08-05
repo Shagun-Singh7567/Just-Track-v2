@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { authStorage } from "../api/authStorage";
 import { notificationsApi } from "../api/notificationsApi";
-import "./Navbar.css";
 
 // Common currencies first; your backend accepts any valid ISO 4217 code,
 // this list is just a convenient shortlist for the picker.
@@ -26,40 +25,11 @@ const SAMPLE_NOTIFICATIONS = [
   { id: "s3", title: "Weekly summary ready", body: "Your spending summary for last week is ready.", time: "3d ago", read: true },
 ];
 
-export default function Navbar({ onLogout, links = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Transactions", href: "/transactions" },
-  { label: "Reports", href: "/reports" },
-] }) {
-  const {
-    isDark,
-    currencyCode,
-    loading: settingsLoading,
-    error: settingsError,
-    setTheme,
-    setCurrencyCode,
-  } = useSettings();
-
-  const user = authStorage.getUser();
-
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-
-  const [notifications, setNotifications] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(true);
-  const [notifNote, setNotifNote] = useState(null);
-
-  const profileRef = useRef(null);
-  const notifRef = useRef(null);
-
-  <style>
-    {
-      ```
-      /*
+const NAVBAR_STYLES = `
+/*
   Tokens below assume the project's existing ink/paper/sage/gold palette.
-  If these already live in a shared tokens file, delete this block and
-  point --jt-* at the shared variables instead.
+  If these already live in a shared tokens file, feel free to point
+  --jt-* at the shared variables instead.
 */
 .jt-navbar {
   --jt-ink: #14201d;
@@ -515,9 +485,38 @@ export default function Navbar({ onLogout, links = [
     transition: none;
   }
 }
-      ```
-    }
-    </style>
+`;
+
+export default function Navbar({
+  onLogout,
+  links = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Transactions", href: "/transactions" },
+    { label: "Reports", href: "/reports" },
+  ],
+}) {
+  const {
+    isDark,
+    currencyCode,
+    loading: settingsLoading,
+    error: settingsError,
+    setTheme,
+    setCurrencyCode,
+  } = useSettings();
+
+  const user = authStorage.getUser();
+
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifNote, setNotifNote] = useState(null);
+
+  const profileRef = useRef(null);
+  const notifRef = useRef(null);
+
   // Close whichever dropdown is open on outside click.
   useEffect(() => {
     function handleClick(e) {
@@ -607,176 +606,180 @@ export default function Navbar({ onLogout, links = [
     : "?";
 
   return (
-    <nav className="jt-navbar">
-      <div className="jt-navbar__brand">
-        <span className="jt-navbar__mark">JT</span>
-        <span className="jt-navbar__name">Just Track</span>
-      </div>
+    <>
+      <style>{NAVBAR_STYLES}</style>
 
-      <div className="jt-navbar__links">
-        {links.map((link) => (
-          <a key={link.href} className="jt-navbar__link" href={link.href}>
-            {link.label}
-          </a>
-        ))}
-      </div>
+      <nav className="jt-navbar">
+        <div className="jt-navbar__brand">
+          <span className="jt-navbar__mark">JT</span>
+          <span className="jt-navbar__name">Just Track</span>
+        </div>
 
-      <div className="jt-navbar__actions">
-        {/* Notifications */}
-        <div className="jt-dropdown" ref={notifRef}>
-          <button
-            type="button"
-            className="jt-icon-btn"
-            aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
-            aria-expanded={notifOpen}
-            onClick={() => {
-              setNotifOpen((o) => !o);
-              setProfileOpen(false);
-            }}
-          >
-            <BellIcon />
-            {unreadCount > 0 && (
-              <span className="jt-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
-            )}
-          </button>
+        <div className="jt-navbar__links">
+          {links.map((link) => (
+            <a key={link.href} className="jt-navbar__link" href={link.href}>
+              {link.label}
+            </a>
+          ))}
+        </div>
 
-          {notifOpen && (
-            <div className="jt-panel jt-panel--notif" role="menu">
-              <div className="jt-panel__header">
-                <span>Notifications</span>
-                {unreadCount > 0 && (
-                  <button type="button" className="jt-link-btn" onClick={markAllRead}>
-                    Mark all read
-                  </button>
+        <div className="jt-navbar__actions">
+          {/* Notifications */}
+          <div className="jt-dropdown" ref={notifRef}>
+            <button
+              type="button"
+              className="jt-icon-btn"
+              aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+              aria-expanded={notifOpen}
+              onClick={() => {
+                setNotifOpen((o) => !o);
+                setProfileOpen(false);
+              }}
+            >
+              <BellIcon />
+              {unreadCount > 0 && (
+                <span className="jt-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div className="jt-panel jt-panel--notif" role="menu">
+                <div className="jt-panel__header">
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <button type="button" className="jt-link-btn" onClick={markAllRead}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                {notifNote && <p className="jt-panel__note">{notifNote}</p>}
+
+                {notifLoading ? (
+                  <p className="jt-panel__empty">Loading…</p>
+                ) : notifications.length === 0 ? (
+                  <p className="jt-panel__empty">You're all caught up.</p>
+                ) : (
+                  <ul className="jt-notif-list">
+                    {notifications.map((n) => (
+                      <li
+                        key={n.id}
+                        className={`jt-notif-item${n.read ? "" : " jt-notif-item--unread"}`}
+                        onClick={() => markAsRead(n.id)}
+                      >
+                        <span className="jt-notif-item__title">{n.title}</span>
+                        <span className="jt-notif-item__body">{n.body}</span>
+                        <span className="jt-notif-item__time">{n.time}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-
-              {notifNote && <p className="jt-panel__note">{notifNote}</p>}
-
-              {notifLoading ? (
-                <p className="jt-panel__empty">Loading…</p>
-              ) : notifications.length === 0 ? (
-                <p className="jt-panel__empty">You're all caught up.</p>
-              ) : (
-                <ul className="jt-notif-list">
-                  {notifications.map((n) => (
-                    <li
-                      key={n.id}
-                      className={`jt-notif-item${n.read ? "" : " jt-notif-item--unread"}`}
-                      onClick={() => markAsRead(n.id)}
-                    >
-                      <span className="jt-notif-item__title">{n.title}</span>
-                      <span className="jt-notif-item__body">{n.body}</span>
-                      <span className="jt-notif-item__time">{n.time}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Profile */}
-        <div className="jt-dropdown" ref={profileRef}>
-          <button
-            type="button"
-            className="jt-avatar-btn"
-            aria-label="Open profile menu"
-            aria-expanded={profileOpen}
-            onClick={() => {
-              setProfileOpen((o) => !o);
-              setNotifOpen(false);
-            }}
-          >
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="" className="jt-avatar-btn__img" />
-            ) : (
-              <span className="jt-avatar-btn__initials">{initials}</span>
             )}
-          </button>
+          </div>
 
-          {profileOpen && (
-            <div className="jt-panel jt-panel--profile" role="menu">
-              <div className="jt-profile-header">
-                <label className="jt-avatar-upload" title="Change picture">
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="" className="jt-avatar-upload__img" />
-                  ) : (
-                    <span className="jt-avatar-upload__initials">{initials}</span>
-                  )}
-                  <span className="jt-avatar-upload__edit">Edit</span>
-                  <input type="file" accept="image/*" onChange={handleAvatarChange} hidden />
-                </label>
-                <div className="jt-profile-header__text">
-                  <p className="jt-profile-header__name">{user?.name || "Signed in"}</p>
-                  <p className="jt-profile-header__email">{user?.email}</p>
-                </div>
-              </div>
-
-              {avatarPreview && (
-                <p className="jt-panel__note">
-                  Preview only — picture uploads aren't saved yet.
-                </p>
+          {/* Profile */}
+          <div className="jt-dropdown" ref={profileRef}>
+            <button
+              type="button"
+              className="jt-avatar-btn"
+              aria-label="Open profile menu"
+              aria-expanded={profileOpen}
+              onClick={() => {
+                setProfileOpen((o) => !o);
+                setNotifOpen(false);
+              }}
+            >
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="" className="jt-avatar-btn__img" />
+              ) : (
+                <span className="jt-avatar-btn__initials">{initials}</span>
               )}
+            </button>
 
-              <div className="jt-panel__section">
-                <span className="jt-panel__label">Theme</span>
-                <div className="jt-segmented" role="radiogroup" aria-label="Theme">
-                  <button
-                    type="button"
-                    className={`jt-segmented__option${!isDark ? " jt-segmented__option--active" : ""}`}
-                    role="radio"
-                    aria-checked={!isDark}
-                    onClick={() => setTheme("LIGHT")}
-                  >
-                    Light
-                  </button>
-                  <button
-                    type="button"
-                    className={`jt-segmented__option${isDark ? " jt-segmented__option--active" : ""}`}
-                    role="radio"
-                    aria-checked={isDark}
-                    onClick={() => setTheme("DARK")}
-                  >
-                    Dark
-                  </button>
+            {profileOpen && (
+              <div className="jt-panel jt-panel--profile" role="menu">
+                <div className="jt-profile-header">
+                  <label className="jt-avatar-upload" title="Change picture">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="" className="jt-avatar-upload__img" />
+                    ) : (
+                      <span className="jt-avatar-upload__initials">{initials}</span>
+                    )}
+                    <span className="jt-avatar-upload__edit">Edit</span>
+                    <input type="file" accept="image/*" onChange={handleAvatarChange} hidden />
+                  </label>
+                  <div className="jt-profile-header__text">
+                    <p className="jt-profile-header__name">{user?.name || "Signed in"}</p>
+                    <p className="jt-profile-header__email">{user?.email}</p>
+                  </div>
                 </div>
+
+                {avatarPreview && (
+                  <p className="jt-panel__note">
+                    Preview only — picture uploads aren't saved yet.
+                  </p>
+                )}
+
+                <div className="jt-panel__section">
+                  <span className="jt-panel__label">Theme</span>
+                  <div className="jt-segmented" role="radiogroup" aria-label="Theme">
+                    <button
+                      type="button"
+                      className={`jt-segmented__option${!isDark ? " jt-segmented__option--active" : ""}`}
+                      role="radio"
+                      aria-checked={!isDark}
+                      onClick={() => setTheme("LIGHT")}
+                    >
+                      Light
+                    </button>
+                    <button
+                      type="button"
+                      className={`jt-segmented__option${isDark ? " jt-segmented__option--active" : ""}`}
+                      role="radio"
+                      aria-checked={isDark}
+                      onClick={() => setTheme("DARK")}
+                    >
+                      Dark
+                    </button>
+                  </div>
+                </div>
+
+                <div className="jt-panel__section">
+                  <label className="jt-panel__label" htmlFor="jt-currency-select">
+                    Currency
+                  </label>
+                  <select
+                    id="jt-currency-select"
+                    className="jt-select"
+                    value={currencyCode}
+                    onChange={(e) => setCurrencyCode(e.target.value)}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} — {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {settingsLoading && <p className="jt-panel__note">Syncing settings…</p>}
+                {settingsError && (
+                  <p className="jt-panel__note jt-panel__note--error">{settingsError}</p>
+                )}
+
+                <a className="jt-panel__link" href="/settings">
+                  Full settings
+                </a>
+                <button type="button" className="jt-panel__logout" onClick={handleLogout}>
+                  Log out
+                </button>
               </div>
-
-              <div className="jt-panel__section">
-                <label className="jt-panel__label" htmlFor="jt-currency-select">
-                  Currency
-                </label>
-                <select
-                  id="jt-currency-select"
-                  className="jt-select"
-                  value={currencyCode}
-                  onChange={(e) => setCurrencyCode(e.target.value)}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code} — {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {settingsLoading && <p className="jt-panel__note">Syncing settings…</p>}
-              {settingsError && (
-                <p className="jt-panel__note jt-panel__note--error">{settingsError}</p>
-              )}
-
-              <a className="jt-panel__link" href="/settings">
-                Full settings
-              </a>
-              <button type="button" className="jt-panel__logout" onClick={handleLogout}>
-                Log out
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
