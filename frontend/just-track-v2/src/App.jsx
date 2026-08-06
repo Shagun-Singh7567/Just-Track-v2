@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import LoginPage from "./components/Login";
 import SignupPage from "./components/SignUp";
 import JustTrackBudgetTracker from "./components/JustTrackBudgetTracker";
+import Navbar from "./components/Navbar";
 import { authStorage } from "./api/authStorage";
 import { SettingsProvider } from "./context/SettingsContext";
 

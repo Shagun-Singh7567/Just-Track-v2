@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { authStorage } from "../api/authStorage";
-import { notificationsApi } from "../api/notificationsApi";
 
 // Common currencies first; your backend accepts any valid ISO 4217 code,
 // this list is just a convenient shortlist for the picker.
@@ -54,6 +53,20 @@ const NAVBAR_STYLES = `
   font-family: var(--jt-font-body);
   color: var(--jt-ink);
   position: relative;
+  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+}
+
+/* Dark-mode palette, mirrors JustTrackBudgetTracker's .jt-root.jt-dark */
+.jt-navbar.jt-dark {
+  --jt-ink: #e8e4d9;
+  --jt-ink-soft: rgba(232, 228, 217, 0.62);
+  --jt-paper: #14171c;
+  --jt-paper-raised: #1c2027;
+  --jt-sage: #4fae7c;
+  --jt-sage-soft: rgba(79, 174, 124, 0.16);
+  --jt-gold: #d4a94a;
+  --jt-stamp: #e0645c;
+  --jt-border: rgba(232, 228, 217, 0.14);
 }
 
 .jt-navbar__brand {
@@ -188,7 +201,10 @@ const NAVBAR_STYLES = `
   position: relative;
 }
 
-.jt-panel {
+/* Renamed from .jt-panel -> .jt-navbar-panel: the ledger page's own
+   .jt-panel (content cards) was colliding with this dropdown-menu class
+   since both stylesheets are injected globally via <style> tags. */
+.jt-navbar-panel {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
@@ -201,7 +217,7 @@ const NAVBAR_STYLES = `
   z-index: 50;
 }
 
-.jt-panel__header {
+.jt-navbar-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -212,17 +228,17 @@ const NAVBAR_STYLES = `
   border-bottom: 1px solid var(--jt-gold);
 }
 
-.jt-panel__note {
+.jt-navbar-panel__note {
   font-size: 12px;
   color: var(--jt-ink-soft);
   margin: 0 0 10px;
 }
 
-.jt-panel__note--error {
+.jt-navbar-panel__note--error {
   color: var(--jt-stamp);
 }
 
-.jt-panel__empty {
+.jt-navbar-panel__empty {
   font-size: 13px;
   color: var(--jt-ink-soft);
   text-align: center;
@@ -377,11 +393,11 @@ const NAVBAR_STYLES = `
   text-overflow: ellipsis;
 }
 
-.jt-panel__section {
+.jt-navbar-panel__section {
   margin-bottom: 12px;
 }
 
-.jt-panel__label {
+.jt-navbar-panel__label {
   display: block;
   font-size: 11px;
   font-weight: 700;
@@ -430,7 +446,7 @@ const NAVBAR_STYLES = `
   font-family: var(--jt-font-body);
 }
 
-.jt-panel__link {
+.jt-navbar-panel__link {
   display: block;
   font-size: 12.5px;
   color: var(--jt-sage);
@@ -440,11 +456,11 @@ const NAVBAR_STYLES = `
   margin-top: 4px;
 }
 
-.jt-panel__link:hover {
+.jt-navbar-panel__link:hover {
   color: var(--jt-ink);
 }
 
-.jt-panel__logout {
+.jt-navbar-panel__logout {
   width: 100%;
   margin-top: 6px;
   padding: 8px 0;
@@ -458,7 +474,7 @@ const NAVBAR_STYLES = `
   transition: background 0.15s ease;
 }
 
-.jt-panel__logout:hover {
+.jt-navbar-panel__logout:hover {
   background: rgba(166, 67, 45, 0.08);
 }
 
@@ -469,7 +485,7 @@ const NAVBAR_STYLES = `
     display: none;
   }
 
-  .jt-panel {
+  .jt-navbar-panel {
     width: 88vw;
     right: -12px;
   }
@@ -481,7 +497,7 @@ const NAVBAR_STYLES = `
   .jt-avatar-btn,
   .jt-avatar-upload__edit,
   .jt-segmented__option,
-  .jt-panel__logout {
+  .jt-navbar-panel__logout {
     transition: none;
   }
 }
@@ -609,7 +625,7 @@ export default function Navbar({
     <>
       <style>{NAVBAR_STYLES}</style>
 
-      <nav className="jt-navbar">
+      <nav className={isDark ? "jt-navbar jt-dark" : "jt-navbar jt-light"}>
         <div className="jt-navbar__brand">
           <span className="jt-navbar__mark">JT</span>
           <span className="jt-navbar__name">Just Track</span>
@@ -643,8 +659,8 @@ export default function Navbar({
             </button>
 
             {notifOpen && (
-              <div className="jt-panel jt-panel--notif" role="menu">
-                <div className="jt-panel__header">
+              <div className="jt-navbar-panel jt-navbar-panel--notif" role="menu">
+                <div className="jt-navbar-panel__header">
                   <span>Notifications</span>
                   {unreadCount > 0 && (
                     <button type="button" className="jt-link-btn" onClick={markAllRead}>
@@ -653,12 +669,12 @@ export default function Navbar({
                   )}
                 </div>
 
-                {notifNote && <p className="jt-panel__note">{notifNote}</p>}
+                {notifNote && <p className="jt-navbar-panel__note">{notifNote}</p>}
 
                 {notifLoading ? (
-                  <p className="jt-panel__empty">Loading…</p>
+                  <p className="jt-navbar-panel__empty">Loading…</p>
                 ) : notifications.length === 0 ? (
-                  <p className="jt-panel__empty">You're all caught up.</p>
+                  <p className="jt-navbar-panel__empty">You're all caught up.</p>
                 ) : (
                   <ul className="jt-notif-list">
                     {notifications.map((n) => (
@@ -698,7 +714,7 @@ export default function Navbar({
             </button>
 
             {profileOpen && (
-              <div className="jt-panel jt-panel--profile" role="menu">
+              <div className="jt-navbar-panel jt-navbar-panel--profile" role="menu">
                 <div className="jt-profile-header">
                   <label className="jt-avatar-upload" title="Change picture">
                     {avatarPreview ? (
@@ -716,13 +732,13 @@ export default function Navbar({
                 </div>
 
                 {avatarPreview && (
-                  <p className="jt-panel__note">
+                  <p className="jt-navbar-panel__note">
                     Preview only — picture uploads aren't saved yet.
                   </p>
                 )}
 
-                <div className="jt-panel__section">
-                  <span className="jt-panel__label">Theme</span>
+                <div className="jt-navbar-panel__section">
+                  <span className="jt-navbar-panel__label">Theme</span>
                   <div className="jt-segmented" role="radiogroup" aria-label="Theme">
                     <button
                       type="button"
@@ -745,8 +761,8 @@ export default function Navbar({
                   </div>
                 </div>
 
-                <div className="jt-panel__section">
-                  <label className="jt-panel__label" htmlFor="jt-currency-select">
+                <div className="jt-navbar-panel__section">
+                  <label className="jt-navbar-panel__label" htmlFor="jt-currency-select">
                     Currency
                   </label>
                   <select
@@ -763,15 +779,15 @@ export default function Navbar({
                   </select>
                 </div>
 
-                {settingsLoading && <p className="jt-panel__note">Syncing settings…</p>}
+                {settingsLoading && <p className="jt-navbar-panel__note">Syncing settings…</p>}
                 {settingsError && (
-                  <p className="jt-panel__note jt-panel__note--error">{settingsError}</p>
+                  <p className="jt-navbar-panel__note jt-navbar-panel__note--error">{settingsError}</p>
                 )}
 
-                <a className="jt-panel__link" href="/settings">
+                <a className="jt-navbar-panel__link" href="/settings">
                   Full settings
                 </a>
-                <button type="button" className="jt-panel__logout" onClick={handleLogout}>
+                <button type="button" className="jt-navbar-panel__logout" onClick={handleLogout}>
                   Log out
                 </button>
               </div>
