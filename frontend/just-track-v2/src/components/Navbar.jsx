@@ -485,9 +485,16 @@ const NAVBAR_STYLES = `
     display: none;
   }
 
+  /* Anchoring to the viewport (fixed) instead of the trigger button
+     (absolute) means the panel can never overhang the screen edge,
+     regardless of which icon opened it or how close to the edge it sits. */
   .jt-navbar-panel {
-    width: 88vw;
-    right: -12px;
+    position: fixed;
+    top: 68px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
   }
 }
 
