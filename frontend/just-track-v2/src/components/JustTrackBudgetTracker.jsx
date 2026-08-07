@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, Trash2, Sun, Moon, Wallet } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { transactionApi } from "../api/transactionApi";
 import { useSettings } from "../context/SettingsContext";
 
@@ -14,18 +14,8 @@ const CATEGORIES = [
   "Other",
 ];
 
-// A curated, common subset of the full ISO 4217 list the backend's Currency
-// enum supports — a 150+ option dropdown isn't great UX, so this covers the
-// currencies most users will actually want. Any code the backend enum
-// supports still works if set some other way; this just bounds the picker.
-const CURRENCIES = [
-  "USD", "EUR", "GBP", "JPY", "INR", "AUD", "CAD", "CHF", "CNY", "HKD",
-  "SGD", "NZD", "SEK", "NOK", "DKK", "ZAR", "AED", "SAR", "BRL", "MXN",
-  "KRW", "THB", "IDR", "MYR", "PHP", "VND", "PKR", "BDT", "LKR", "NPR",
-];
-
-export default function JustTrackBudgetTracker({ onLogout }) {
-  const { isDark, setTheme, currencyCode, setCurrencyCode, formatCurrency, error: settingsError } = useSettings();
+export default function JustTrackBudgetTracker() {
+  const { isDark, formatCurrency, error: settingsError } = useSettings();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -175,26 +165,7 @@ export default function JustTrackBudgetTracker({ onLogout }) {
           --stamp: #E8E4D9;
         }
         .jt-shell { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
-        .jt-display { font-family: 'Special Elite', monospace; letter-spacing: 0.5px; }
         .jt-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
-
-        .jt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
-        .jt-title { font-size: 22px; display: flex; align-items: center; gap: 10px; }
-        .jt-title .jt-sub { font-size: 11px; color: var(--ink-soft); font-family: 'Inter'; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-top: 2px; }
-
-        .jt-stamp-btn {
-          border: 2px solid var(--stamp);
-          background: transparent;
-          color: var(--stamp);
-          border-radius: 999px;
-          width: 42px; height: 42px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          transform: rotate(-4deg);
-          transition: transform 0.25s ease, background 0.25s ease;
-        }
-        .jt-stamp-btn:hover { transform: rotate(0deg) scale(1.06); }
-        .jt-stamp-btn:active { transform: rotate(-8deg) scale(0.95); }
 
         .jt-hero {
           background: var(--surface);
@@ -223,7 +194,7 @@ export default function JustTrackBudgetTracker({ onLogout }) {
           border: 1px solid var(--rule); border-radius: 4px;
           padding: 8px 10px; font-size: 14px; font-family: 'Inter';
         }
-        .jt-field input:focus, .jt-field select:focus, .jt-stamp-btn:focus-visible, .jt-toggle button:focus-visible {
+        .jt-field input:focus, .jt-field select:focus, .jt-toggle button:focus-visible {
           outline: 2px solid var(--margin); outline-offset: 1px;
         }
 
@@ -278,34 +249,6 @@ export default function JustTrackBudgetTracker({ onLogout }) {
 
         .jt-footer { text-align: center; font-size: 11px; color: var(--ink-soft); margin-top: 30px; letter-spacing: 0.5px; }
 
-        .jt-currency-select {
-          border: 1px solid var(--rule);
-          background: var(--surface);
-          color: var(--ink);
-          border-radius: 6px;
-          padding: 8px 10px;
-          font-size: 13px;
-          font-family: 'JetBrains Mono', monospace;
-          cursor: pointer;
-        }
-        .jt-currency-select:focus-visible {
-          outline: 2px solid var(--margin); outline-offset: 1px;
-        }
-
-        .jt-signout-btn {
-          border: 1px solid var(--rule);
-          background: var(--surface);
-          color: var(--ink-soft);
-          border-radius: 6px;
-          padding: 8px 14px;
-          font-size: 13px;
-          font-family: 'Inter';
-          cursor: pointer;
-          transition: color 0.2s ease, border-color 0.2s ease;
-        }
-        .jt-signout-btn:hover { color: var(--expense); border-color: var(--expense); }
-        .jt-signout-btn:focus-visible { outline: 2px solid var(--margin); outline-offset: 1px; }
-
         @media (max-width: 520px) {
           .jt-form-grid { grid-template-columns: 1fr; }
           .jt-row { grid-template-columns: 60px 1fr 78px; }
@@ -314,45 +257,6 @@ export default function JustTrackBudgetTracker({ onLogout }) {
       `}</style>
 
       <div className="jt-shell">
-        <div className="jt-header">
-          <div className="jt-title">
-            <Wallet size={22} strokeWidth={2} />
-            <span className="jt-display">
-              JUST TRACK
-              <span className="jt-sub">personal ledger</span>
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <select
-              className="jt-currency-select"
-              value={currencyCode}
-              onChange={(e) => setCurrencyCode(e.target.value)}
-              aria-label="Currency"
-              title="Currency"
-            >
-              {CURRENCIES.map((code) => (
-                <option key={code} value={code}>{code}</option>
-              ))}
-            </select>
-            <button
-              className="jt-stamp-btn"
-              onClick={() => setTheme(isDark ? "LIGHT" : "DARK")}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button
-              className="jt-signout-btn"
-              onClick={onLogout}
-              aria-label="Sign out"
-              title="Sign out"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-
         {settingsError && <div className="jt-error" style={{ marginBottom: "14px" }}>{settingsError}</div>}
 
         <div className="jt-hero">
