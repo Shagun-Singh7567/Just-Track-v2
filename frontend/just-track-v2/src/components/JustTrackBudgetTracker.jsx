@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { transactionApi } from "../api/transactionApi";
 import { useSettings } from "../context/SettingsContext";
 
@@ -30,6 +30,17 @@ export default function JustTrackBudgetTracker() {
     type: "EXPENSE",
     amount: "",
   });
+
+  // --- edit state ---
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    description: "",
+    category: CATEGORIES[0],
+    type: "EXPENSE",
+    amount: "",
+  });
+  const [editError, setEditError] = useState(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // CSS variables scoped to .jt-root can't cascade *up* to <body>, so without
   // this, the browser's default white body background shows through as a
@@ -98,6 +109,57 @@ export default function JustTrackBudgetTracker() {
     } catch (err) {
       setTransactions(prev);
       console.error("Failed to delete transaction", err);
+    }
+  }
+
+  // --- edit handlers ---
+  function handleEditStart(t) {
+    setEditingId(t.id);
+    setEditError(null);
+    setEditForm({
+      description: t.description,
+      category: t.category,
+      type: t.type,
+      amount: String(t.amount),
+    });
+  }
+
+  function handleEditCancel() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function handleEditSave(id) {
+    const amt = parseFloat(editForm.amount);
+    if (!editForm.description.trim() || !amt || amt <= 0) {
+      setEditError("Enter a valid description and amount.");
+      return;
+    }
+
+    const payload = {
+      description: editForm.description.trim(),
+      category: editForm.category,
+      type: editForm.type,
+      amount: amt,
+    };
+
+    const prev = transactions;
+    // optimistic update, rolled back on failure — mirrors handleDelete's pattern
+    setTransactions((cur) => cur.map((t) => (t.id === id ? { ...t, ...payload } : t)));
+
+    try {
+      setEditSubmitting(true);
+      setEditError(null);
+      // PUT /api/transactions/{id}
+      const res = await transactionApi.update(id, payload);
+      setTransactions((cur) => cur.map((t) => (t.id === id ? res.data : t)));
+      setEditingId(null);
+    } catch (err) {
+      setTransactions(prev);
+      setEditError("Failed to save changes.");
+      console.error("Failed to update transaction", err);
+    } finally {
+      setEditSubmitting(false);
     }
   }
 
@@ -234,13 +296,28 @@ export default function JustTrackBudgetTracker() {
         .jt-row .amt.income { color: var(--income); }
         .jt-row .amt.expense { color: var(--expense); }
         .jt-row .bal { text-align: right; font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-        .jt-row .del { background: none; border: none; color: var(--ink-soft); cursor: pointer; opacity: 0; transition: opacity 0.15s ease, color 0.15s ease; padding: 2px; }
-        .jt-row:hover .del { opacity: 1; }
-        .jt-row .del:hover { color: var(--expense); }
+        .jt-row .row-actions { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 0.15s ease; }
+        .jt-row:hover .row-actions { opacity: 1; }
+        .jt-row .row-actions button { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 2px; display: flex; }
+        .jt-row .row-actions button:hover { color: var(--margin); }
+        .jt-row .row-actions .edit-btn:hover { color: var(--ink); }
 
         .jt-empty { text-align: center; padding: 30px 0; color: var(--ink-soft); font-size: 13px; }
         .jt-loading { text-align: center; padding: 30px 0; color: var(--ink-soft); font-size: 13px; }
         .jt-load-error { text-align: center; padding: 30px 0; color: var(--expense); font-size: 13px; }
+
+        .jt-edit-row { padding: 12px 0; border-bottom: 1px dashed var(--rule); }
+        .jt-edit-row:last-child { border-bottom: none; }
+        .jt-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-bottom: 10px; }
+        .jt-edit-grid .full { grid-column: 1 / -1; }
+        .jt-edit-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+        .jt-edit-save, .jt-edit-cancel {
+          border: none; border-radius: 4px; padding: 7px 12px; font-size: 13px; font-weight: 600;
+          cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'Inter';
+        }
+        .jt-edit-save { background: var(--ink); color: var(--paper); }
+        .jt-edit-save:disabled { opacity: 0.6; cursor: not-allowed; }
+        .jt-edit-cancel { background: var(--paper); color: var(--ink-soft); border: 1px solid var(--rule); }
 
         .jt-tally-row { display: grid; grid-template-columns: 110px 1fr 70px; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 12.5px; }
         .jt-tally-track { background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; height: 8px; overflow: hidden; }
@@ -253,6 +330,8 @@ export default function JustTrackBudgetTracker() {
           .jt-form-grid { grid-template-columns: 1fr; }
           .jt-row { grid-template-columns: 60px 1fr 78px; }
           .jt-row .bal { display: none; }
+          .jt-row .row-actions { opacity: 1; }
+          .jt-edit-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -363,24 +442,102 @@ export default function JustTrackBudgetTracker() {
             <div className="jt-empty">No entries match this filter yet.</div>
           ) : (
             <div className="jt-ledger">
-              {visibleRows.map((t) => (
-                <div className="jt-row" key={t.id}>
-                  <div className="date jt-mono">{(t.createdDate || "").slice(5) || "—"}</div>
-                  <div className="desc">
-                    {t.description}
-                    <span className="cat">{t.category}</span>
+              {visibleRows.map((t) =>
+                editingId === t.id ? (
+                  <div className="jt-edit-row" key={t.id}>
+                    <div className="jt-edit-grid">
+                      <div className="jt-field">
+                        <label htmlFor={`jt-edit-amount-${t.id}`}>Amount</label>
+                        <input
+                          id={`jt-edit-amount-${t.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={editForm.amount}
+                          onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="jt-field">
+                        <label htmlFor={`jt-edit-cat-${t.id}`}>Category</label>
+                        <select
+                          id={`jt-edit-cat-${t.id}`}
+                          value={editForm.category}
+                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        >
+                          {CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="jt-field full">
+                        <label htmlFor={`jt-edit-desc-${t.id}`}>Description</label>
+                        <input
+                          id={`jt-edit-desc-${t.id}`}
+                          type="text"
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        />
+                      </div>
+                      <div className="jt-field full">
+                        <label>Type</label>
+                        <div className="jt-toggle">
+                          <button
+                            type="button"
+                            className={editForm.type === "INCOME" ? "active income" : ""}
+                            onClick={() => setEditForm({ ...editForm, type: "INCOME" })}
+                          >
+                            Income
+                          </button>
+                          <button
+                            type="button"
+                            className={editForm.type === "EXPENSE" ? "active expense" : ""}
+                            onClick={() => setEditForm({ ...editForm, type: "EXPENSE" })}
+                          >
+                            Expense
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="jt-edit-actions">
+                      {editError && <div className="jt-error" style={{ marginRight: "auto" }}>{editError}</div>}
+                      <button type="button" className="jt-edit-cancel" onClick={handleEditCancel}>
+                        <X size={14} /> Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="jt-edit-save"
+                        onClick={() => handleEditSave(t.id)}
+                        disabled={editSubmitting}
+                      >
+                        <Check size={14} /> {editSubmitting ? "Saving..." : "Save"}
+                      </button>
+                    </div>
                   </div>
-                  <div className={"amt jt-mono " + (t.type === "INCOME" ? "income" : "expense")}>
-                    {t.type === "INCOME" ? "+" : "−"}{formatCurrency(t.amount)}
+                ) : (
+                  <div className="jt-row" key={t.id}>
+                    <div className="date jt-mono">{(t.createdDate || "").slice(5) || "—"}</div>
+                    <div className="desc">
+                      {t.description}
+                      <span className="cat">{t.category}</span>
+                    </div>
+                    <div className={"amt jt-mono " + (t.type === "INCOME" ? "income" : "expense")}>
+                      {t.type === "INCOME" ? "+" : "−"}{formatCurrency(t.amount)}
+                    </div>
+                    <div className="bal jt-mono">
+                      {formatCurrency(t.running)}
+                      <div className="row-actions">
+                        <button className="edit-btn" onClick={() => handleEditStart(t)} aria-label={`Edit ${t.description}`}>
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(t.id)} aria-label={`Delete ${t.description}`}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bal jt-mono">
-                    {formatCurrency(t.running)}
-                    <button className="del" onClick={() => handleDelete(t.id)} aria-label={`Delete ${t.description}`}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
         </div>

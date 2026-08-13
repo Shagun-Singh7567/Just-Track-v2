@@ -4,5 +4,6 @@ import apiClient from './axiosConfig';
 export const transactionApi = {
   getAll: () => apiClient.get('/transactions'),
   create: (transaction) => apiClient.post('/transactions', transaction),
+  update: (id, transaction) => apiClient.put(`/transactions/${id}`, transaction),
   delete: (id) => apiClient.delete(`/transactions/${id}`),
 };
