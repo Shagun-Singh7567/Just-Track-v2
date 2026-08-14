@@ -3,7 +3,7 @@ import axios from 'axios';
 import { authStorage } from './authStorage';
 
 const apiClient = axios.create({
-  baseURL: 'https://just-track-v2-production.up.railway.app/api',
+  baseURL: 'https://just-track-v2.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
