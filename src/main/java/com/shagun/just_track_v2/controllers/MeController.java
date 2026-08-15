@@ -11,4 +11,8 @@ public class MeController {
     public String me(Authentication authentication) {
         return "Authenticated as: " + authentication.getName();
     }
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+    return ResponseEntity.ok("OK");
+    }
 }
