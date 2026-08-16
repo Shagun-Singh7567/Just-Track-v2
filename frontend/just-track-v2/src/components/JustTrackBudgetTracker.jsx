@@ -51,6 +51,14 @@ export default function JustTrackBudgetTracker() {
     document.documentElement.style.background = isDark ? "#14171C" : "#FAF7F0";
   }, [isDark]);
 
+  // Prevent the page from scrolling while the full-screen loading overlay is up.
+  useEffect(() => {
+    document.body.style.overflow = loading ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [loading]);
+
   // GET /api/transactions on mount
   useEffect(() => {
     let isMounted = true;
@@ -229,6 +237,64 @@ export default function JustTrackBudgetTracker() {
         .jt-shell { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
         .jt-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
 
+        /* ---- Full-screen loading overlay ---- */
+        .jt-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: var(--paper);
+          opacity: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          gap: 18px;
+        }
+        .jt-overlay-mark {
+          position: relative;
+          width: 46px;
+          height: 46px;
+        }
+        .jt-overlay-mark::before,
+        .jt-overlay-mark::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          border: 2.5px solid var(--rule);
+        }
+        .jt-overlay-mark::after {
+          border-color: var(--margin) transparent transparent transparent;
+          animation: jt-spin 0.9s linear infinite;
+        }
+        .jt-overlay-text {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12.5px;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          color: var(--ink-soft);
+        }
+        .jt-overlay-text::after {
+          content: '';
+          display: inline-block;
+          width: 1ch;
+          animation: jt-dots 1.2s steps(4, end) infinite;
+        }
+        @keyframes jt-spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes jt-dots {
+          0% { content: ''; }
+          25% { content: '.'; }
+          50% { content: '..'; }
+          75% { content: '...'; }
+          100% { content: ''; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .jt-overlay-mark::after { animation: none; border-color: var(--margin); }
+          .jt-overlay-text::after { animation: none; content: '...'; }
+        }
+
         .jt-hero {
           background: var(--surface);
           border: 1px solid var(--rule);
@@ -335,6 +401,13 @@ export default function JustTrackBudgetTracker() {
         }
       `}</style>
 
+      {loading && (
+        <div className="jt-overlay" role="status" aria-live="polite">
+          <div className="jt-overlay-mark" />
+          <div className="jt-overlay-text jt-mono">Loading ledger</div>
+        </div>
+      )}
+
       <div className="jt-shell">
         {settingsError && <div className="jt-error" style={{ marginBottom: "14px" }}>{settingsError}</div>}
 
@@ -434,9 +507,7 @@ export default function JustTrackBudgetTracker() {
             </select>
           </div>
 
-          {loading ? (
-            <div className="jt-loading">Loading transactions...</div>
-          ) : loadError ? (
+          {loading ? null : loadError ? (
             <div className="jt-load-error">{loadError}</div>
           ) : visibleRows.length === 0 ? (
             <div className="jt-empty">No entries match this filter yet.</div>
@@ -556,8 +627,6 @@ export default function JustTrackBudgetTracker() {
             ))}
           </div>
         )}
-
-        <div className="jt-footer">Connected to Spring Boot at /api/transactions.</div>
       </div>
     </div>
   );
