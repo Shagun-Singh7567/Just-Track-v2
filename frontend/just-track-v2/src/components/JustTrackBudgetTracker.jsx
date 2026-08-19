@@ -353,7 +353,7 @@ export default function JustTrackBudgetTracker() {
         .jt-ledger { position: relative; padding-left: 20px; }
         .jt-ledger::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 1.5px; background: var(--margin); opacity: 0.55; }
 
-        .jt-row { display: grid; grid-template-columns: 78px 1fr 100px 90px; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px dashed var(--rule); }
+        .jt-row { display: grid; grid-template-columns: 78px 1fr 100px auto; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px dashed var(--rule); }
         .jt-row:last-child { border-bottom: none; }
         .jt-row .date { font-size: 11px; color: var(--ink-soft); }
         .jt-row .desc { font-size: 14px; }
@@ -361,8 +361,9 @@ export default function JustTrackBudgetTracker() {
         .jt-row .amt { text-align: right; font-size: 14px; font-weight: 600; }
         .jt-row .amt.income { color: var(--income); }
         .jt-row .amt.expense { color: var(--expense); }
-        .jt-row .bal { text-align: right; font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-        .jt-row .row-actions { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 0.15s ease; }
+        .jt-row .bal-group { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 90px; }
+        .jt-row .bal { text-align: right; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+        .jt-row .row-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s ease; }
         .jt-row:hover .row-actions { opacity: 1; }
         .jt-row .row-actions button { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 2px; display: flex; }
         .jt-row .row-actions button:hover { color: var(--margin); }
@@ -394,8 +395,9 @@ export default function JustTrackBudgetTracker() {
 
         @media (max-width: 520px) {
           .jt-form-grid { grid-template-columns: 1fr; }
-          .jt-row { grid-template-columns: 60px 1fr 78px; }
+          .jt-row { grid-template-columns: 60px 1fr auto; }
           .jt-row .bal { display: none; }
+          .jt-row .bal-group { min-width: 0; }
           .jt-row .row-actions { opacity: 1; }
           .jt-edit-grid { grid-template-columns: 1fr; }
         }
@@ -595,8 +597,8 @@ export default function JustTrackBudgetTracker() {
                     <div className={"amt jt-mono " + (t.type === "INCOME" ? "income" : "expense")}>
                       {t.type === "INCOME" ? "+" : "−"}{formatCurrency(t.amount)}
                     </div>
-                    <div className="bal jt-mono">
-                      {formatCurrency(t.running)}
+                    <div className="bal-group">
+                      <span className="bal jt-mono">{formatCurrency(t.running)}</span>
                       <div className="row-actions">
                         <button className="edit-btn" onClick={() => handleEditStart(t)} aria-label={`Edit ${t.description}`}>
                           <Pencil size={14} />
