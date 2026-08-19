@@ -24,7 +24,7 @@ Just Track v2 is a rebuild of the original Just Track app, moving from a JDBC-ba
 ## Tech Stack
 
 **Backend**
-- Java 24, Spring Boot 4.1.0 (Spring 7)
+- Java 21, Spring Boot 4.1.0 (Spring 7)
 - Spring Security with JWT authentication (`JwtAuthFilter`, `SecurityConfig`, `CustomUserDetailsService`)
 - PostgreSQL
 - Maven
@@ -64,7 +64,7 @@ just-track-v2/
 
 ### Prerequisites
 
-- JDK 24
+- JDK 21
 - Node.js and npm
 - PostgreSQL (local instance or a connection string to a hosted instance)
 - Maven (or use the included `mvnw` wrapper)
@@ -72,8 +72,6 @@ just-track-v2/
 ### Backend Setup
 
 ```bash
-cd backend
-
 # Configure environment variables (or application-local.properties)
 # - jwt.secret
 # - JWT_EXPIRATION_MS
@@ -88,7 +86,7 @@ The backend will be available at `http://localhost:8080/api`.
 ### Frontend Setup
 
 ```bash
-cd frontend
+cd frontend/just-track-v2
 npm install
 
 # Configure your API base URL in .env, e.g.:
@@ -111,7 +109,7 @@ The frontend will be available at `http://localhost:5173`.
 
 ## Deployment
 
-- **Backend** — deployed to Railway, with environment variables configured in the Railway dashboard and a separate production PostgreSQL instance.
+- **Backend** — deployed to Render, with environment variables configured in the Render dashboard and a separate production PostgreSQL instance.
 - **Frontend** — deployed to Vercel, pointed at the Railway-hosted API.
 
 
