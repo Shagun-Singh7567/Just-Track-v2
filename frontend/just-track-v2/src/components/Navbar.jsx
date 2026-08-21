@@ -15,6 +15,8 @@ const CURRENCIES = [
   { code: "CHF", label: "Swiss Franc" },
   { code: "CNY", label: "Chinese Yuan" },
   { code: "SGD", label: "Singapore Dollar" },
+  { code: "MXN", label: "Mexican Peso"},
+  { code: "PEN", label: "Peruvian Sol"}
 ];
 
 // Shown only if GET /notifications fails (route doesn't exist yet).
