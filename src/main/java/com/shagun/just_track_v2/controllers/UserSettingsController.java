@@ -1,14 +1,11 @@
 package com.shagun.just_track_v2.controllers;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +15,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.shagun.just_track_v2.dto.UserSettingsRequest;
 import com.shagun.just_track_v2.dto.UserSettingsResponse;
-import com.shagun.just_track_v2.model.Currency;
 import com.shagun.just_track_v2.model.User;
 import com.shagun.just_track_v2.model.UserSettings;
 import com.shagun.just_track_v2.repository.UserRepository;
@@ -26,6 +22,7 @@ import com.shagun.just_track_v2.service.UserSettingsService;
 
 @RestController
 @RequestMapping("/settings")
+@CrossOrigin(origins = {"http://localhost:5173", "https://just-track-v2.vercel.app"})
 public class UserSettingsController {
     @Autowired
     UserSettingsService service;
@@ -47,18 +44,11 @@ public class UserSettingsController {
         return ResponseEntity.ok(toResponse(settings));
     }
 
-    @GetMapping("/currencies")
-    public ResponseEntity<List<String>> getSupportedCurrencies() {
-        List<String> codes = Arrays.stream(Currency.values())
-                .map(Currency::name)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(codes);
-    }
-
     @PatchMapping
     public ResponseEntity<UserSettingsResponse> updateUserSettings(
             @RequestBody UserSettingsRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
         UserSettings settings = service.updateUserSettings(resolveUser(userDetails), request);
         return ResponseEntity.ok(toResponse(settings));
     }
