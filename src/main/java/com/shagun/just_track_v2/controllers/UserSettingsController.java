@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +21,6 @@ import com.shagun.just_track_v2.service.UserSettingsService;
 
 @RestController
 @RequestMapping("/settings")
-@CrossOrigin(origins = {"http://localhost:5173", "https://just-track-v2.vercel.app"})
 public class UserSettingsController {
     @Autowired
     UserSettingsService service;
