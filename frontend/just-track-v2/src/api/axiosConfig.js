@@ -3,7 +3,7 @@ import axios from 'axios';
 import { authStorage } from './authStorage';
 
 const apiClient = axios.create({
-  baseURL: 'https://just-track-v2.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://just-track-v2.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },

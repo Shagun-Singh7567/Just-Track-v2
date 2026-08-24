@@ -28,6 +28,16 @@ public class TransactionService {
         return repository.save(transaction);
     }
 
+    public Transaction updateTransaction(Long id, Transaction updatedTransaction, User user) {
+        Transaction existing = getTransactionById(id, user);
+
+        existing.setDescription(updatedTransaction.getDescription());
+        existing.setCategory(updatedTransaction.getCategory());
+        existing.setType(updatedTransaction.getType());
+        existing.setAmount(updatedTransaction.getAmount());
+
+        return repository.save(existing);
+    }
     public void deleteTransaction(Long id, User user) {
         Transaction transaction = getTransactionById(id, user);
         repository.delete(transaction);
