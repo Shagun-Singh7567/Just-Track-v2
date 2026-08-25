@@ -15,21 +15,22 @@ const CURRENCIES = [
   { code: "CHF", label: "Swiss Franc" },
   { code: "CNY", label: "Chinese Yuan" },
   { code: "SGD", label: "Singapore Dollar" },
-];
-
-// Shown only if GET /notifications fails (route doesn't exist yet).
-const SAMPLE_NOTIFICATIONS = [
-  { id: "s1", title: "Budget alert", body: "You've used 85% of your Dining budget this month.", time: "2h ago", read: false },
-  { id: "s2", title: "Large transaction", body: "A transaction was recorded above your usual range.", time: "1d ago", read: false },
-  { id: "s3", title: "Weekly summary ready", body: "Your spending summary for last week is ready.", time: "3d ago", read: true },
+  { code: "MXN", label: "Mexican Peso" },
+  { code: "PEN", label: "Peruvian Sol" },
+  { code: "BRL", label: "Brazilian Real" },
+  { code: "ZAR", label: "South African Rand" },
+  { code: "AED", label: "UAE Dirham" },
+  { code: "KRW", label: "South Korean Won" },
+  { code: "HKD", label: "Hong Kong Dollar" },
+  { code: "NZD", label: "New Zealand Dollar" },
+  { code: "SEK", label: "Swedish Krona" },
+  { code: "NOK", label: "Norwegian Krone" },
+  { code: "RUB", label: "Russian Ruble" },
+  { code: "THB", label: "Thai Baht" },
+  { code: "IDR", label: "Indonesian Rupiah" },
 ];
 
 const NAVBAR_STYLES = `
-/*
-  Tokens below assume the project's existing ink/paper/sage/gold palette.
-  If these already live in a shared tokens file, feel free to point
-  --jt-* at the shared variables instead.
-*/
 .jt-navbar {
   --jt-ink: #14201d;
   --jt-ink-soft: rgba(20, 32, 29, 0.62);
@@ -38,7 +39,7 @@ const NAVBAR_STYLES = `
   --jt-sage: #5c7a6c;
   --jt-sage-soft: #e2e8e0;
   --jt-gold: #b8923d;
-  --jt-stamp: #a6432d; /* used only for the unread mark, like a postmark ink */
+  --jt-stamp: #a6432d;
   --jt-border: rgba(20, 32, 29, 0.12);
   --jt-font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --jt-font-body: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -56,7 +57,6 @@ const NAVBAR_STYLES = `
   transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
 }
 
-/* Dark-mode palette, mirrors JustTrackBudgetTracker's .jt-root.jt-dark */
 .jt-navbar.jt-dark {
   --jt-ink: #e8e4d9;
   --jt-ink-soft: rgba(232, 228, 217, 0.62);
@@ -92,80 +92,15 @@ const NAVBAR_STYLES = `
   letter-spacing: 0.01em;
 }
 
-.jt-navbar__links {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-}
-
-.jt-navbar__link {
-  font-size: 14px;
-  color: var(--jt-ink-soft);
-  text-decoration: none;
-  padding: 4px 2px;
-  border-bottom: 1px solid transparent;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.jt-navbar__link:hover,
-.jt-navbar__link:focus-visible {
-  color: var(--jt-ink);
-  border-bottom-color: var(--jt-gold);
-}
-
 .jt-navbar__actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-left: auto;
 }
 
-/* --- Shared icon / avatar buttons --- */
-
-.jt-icon-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--jt-ink);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.jt-icon-btn:hover,
-.jt-icon-btn:focus-visible {
-  background: var(--jt-sage-soft);
-  border-color: var(--jt-border);
-}
-
-.jt-icon-btn:focus-visible {
-  outline: 2px solid var(--jt-gold);
-  outline-offset: 2px;
-}
-
-.jt-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--jt-stamp);
-  color: var(--jt-paper);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-}
-
-/* Avatar reads like a wax-seal stamp: a plain ring that only becomes a
-   full seal (dashed ring) on hover/focus, echoing the ledger motif. */
 .jt-avatar-btn {
+  position: relative;
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -190,20 +125,19 @@ const NAVBAR_STYLES = `
 }
 
 .jt-avatar-btn__img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  object-position: center;
 }
-
-/* --- Dropdown shell --- */
 
 .jt-dropdown {
   position: relative;
 }
 
-/* Renamed from .jt-panel -> .jt-navbar-panel: the ledger page's own
-   .jt-panel (content cards) was colliding with this dropdown-menu class
-   since both stylesheets are injected globally via <style> tags. */
 .jt-navbar-panel {
   position: absolute;
   top: calc(100% + 10px);
@@ -217,17 +151,6 @@ const NAVBAR_STYLES = `
   z-index: 50;
 }
 
-.jt-navbar-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 600;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--jt-gold);
-}
-
 .jt-navbar-panel__note {
   font-size: 12px;
   color: var(--jt-ink-soft);
@@ -237,88 +160,6 @@ const NAVBAR_STYLES = `
 .jt-navbar-panel__note--error {
   color: var(--jt-stamp);
 }
-
-.jt-navbar-panel__empty {
-  font-size: 13px;
-  color: var(--jt-ink-soft);
-  text-align: center;
-  padding: 18px 0;
-  margin: 0;
-}
-
-.jt-link-btn {
-  background: none;
-  border: none;
-  color: var(--jt-sage);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.jt-link-btn:hover {
-  color: var(--jt-ink);
-}
-
-/* --- Notifications --- */
-
-.jt-notif-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 280px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.jt-notif-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.jt-notif-item:hover {
-  background: var(--jt-sage-soft);
-}
-
-.jt-notif-item--unread {
-  position: relative;
-  padding-left: 16px;
-}
-
-.jt-notif-item--unread::before {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 13px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--jt-stamp);
-}
-
-.jt-notif-item__title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.jt-notif-item__body {
-  font-size: 12px;
-  color: var(--jt-ink-soft);
-}
-
-.jt-notif-item__time {
-  font-size: 11px;
-  color: var(--jt-ink-soft);
-  opacity: 0.8;
-}
-
-/* --- Profile panel --- */
 
 .jt-profile-header {
   display: flex;
@@ -346,9 +187,13 @@ const NAVBAR_STYLES = `
 }
 
 .jt-avatar-upload__img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  object-position: center;
 }
 
 .jt-avatar-upload__edit {
@@ -478,16 +323,7 @@ const NAVBAR_STYLES = `
   background: rgba(166, 67, 45, 0.08);
 }
 
-/* --- Responsive --- */
-
 @media (max-width: 720px) {
-  .jt-navbar__links {
-    display: none;
-  }
-
-  /* Anchoring to the viewport (fixed) instead of the trigger button
-     (absolute) means the panel can never overhang the screen edge,
-     regardless of which icon opened it or how close to the edge it sits. */
   .jt-navbar-panel {
     position: fixed;
     top: 68px;
@@ -499,8 +335,6 @@ const NAVBAR_STYLES = `
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .jt-navbar__link,
-  .jt-icon-btn,
   .jt-avatar-btn,
   .jt-avatar-upload__edit,
   .jt-segmented__option,
@@ -510,14 +344,7 @@ const NAVBAR_STYLES = `
 }
 `;
 
-export default function Navbar({
-  onLogout,
-  links = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Transactions", href: "/transactions" },
-    { label: "Reports", href: "/reports" },
-  ],
-}) {
+export default function Navbar({ onLogout }) {
   const {
     isDark,
     currencyCode,
@@ -530,82 +357,25 @@ export default function Navbar({
   const user = authStorage.getUser();
 
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  const [notifications, setNotifications] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(true);
-  const [notifNote, setNotifNote] = useState(null);
-
   const profileRef = useRef(null);
-  const notifRef = useRef(null);
 
-  // Close whichever dropdown is open on outside click.
   useEffect(() => {
     function handleClick(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Close on Escape for keyboard users.
   useEffect(() => {
     function handleKey(e) {
-      if (e.key === "Escape") {
-        setProfileOpen(false);
-        setNotifOpen(false);
-      }
+      if (e.key === "Escape") setProfileOpen(false);
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setNotifLoading(true);
-        const res = await notificationsApi.list();
-        if (!mounted) return;
-        setNotifications(res.data);
-        setNotifNote(null);
-      } catch (err) {
-        console.error(err);
-        if (!mounted) return;
-        setNotifications(SAMPLE_NOTIFICATIONS);
-        setNotifNote("Showing sample alerts — live notifications aren't connected yet.");
-      } finally {
-        if (mounted) setNotifLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  async function markAsRead(id) {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    try {
-      await notificationsApi.markRead(id);
-    } catch (err) {
-      console.error(err);
-      // Real endpoint doesn't exist yet — leave the optimistic state as-is
-      // rather than reverting, so the demo still feels usable.
-    }
-  }
-
-  async function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    try {
-      await notificationsApi.markAllRead();
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
   function handleAvatarChange(e) {
     const file = e.target.files?.[0];
@@ -638,80 +408,14 @@ export default function Navbar({
           <span className="jt-navbar__name">Just Track</span>
         </div>
 
-        <div className="jt-navbar__links">
-          {links.map((link) => (
-            <a key={link.href} className="jt-navbar__link" href={link.href}>
-              {link.label}
-            </a>
-          ))}
-        </div>
-
         <div className="jt-navbar__actions">
-          {/* Notifications */}
-          <div className="jt-dropdown" ref={notifRef}>
-            <button
-              type="button"
-              className="jt-icon-btn"
-              aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
-              aria-expanded={notifOpen}
-              onClick={() => {
-                setNotifOpen((o) => !o);
-                setProfileOpen(false);
-              }}
-            >
-              <BellIcon />
-              {unreadCount > 0 && (
-                <span className="jt-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
-              )}
-            </button>
-
-            {notifOpen && (
-              <div className="jt-navbar-panel jt-navbar-panel--notif" role="menu">
-                <div className="jt-navbar-panel__header">
-                  <span>Notifications</span>
-                  {unreadCount > 0 && (
-                    <button type="button" className="jt-link-btn" onClick={markAllRead}>
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-
-                {notifNote && <p className="jt-navbar-panel__note">{notifNote}</p>}
-
-                {notifLoading ? (
-                  <p className="jt-navbar-panel__empty">Loading…</p>
-                ) : notifications.length === 0 ? (
-                  <p className="jt-navbar-panel__empty">You're all caught up.</p>
-                ) : (
-                  <ul className="jt-notif-list">
-                    {notifications.map((n) => (
-                      <li
-                        key={n.id}
-                        className={`jt-notif-item${n.read ? "" : " jt-notif-item--unread"}`}
-                        onClick={() => markAsRead(n.id)}
-                      >
-                        <span className="jt-notif-item__title">{n.title}</span>
-                        <span className="jt-notif-item__body">{n.body}</span>
-                        <span className="jt-notif-item__time">{n.time}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Profile */}
           <div className="jt-dropdown" ref={profileRef}>
             <button
               type="button"
               className="jt-avatar-btn"
               aria-label="Open profile menu"
               aria-expanded={profileOpen}
-              onClick={() => {
-                setProfileOpen((o) => !o);
-                setNotifOpen(false);
-              }}
+              onClick={() => setProfileOpen((o) => !o)}
             >
               {avatarPreview ? (
                 <img src={avatarPreview} alt="" className="jt-avatar-btn__img" />
@@ -803,24 +507,5 @@ export default function Navbar({
         </div>
       </nav>
     </>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
   );
 }
