@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useSettings } from "../context/SettingsContext";
 import { authStorage } from "../api/authStorage";
 
@@ -495,9 +496,9 @@ export default function Navbar({ onLogout }) {
                   <p className="jt-navbar-panel__note jt-navbar-panel__note--error">{settingsError}</p>
                 )}
 
-                <a className="jt-navbar-panel__link" href="/settings">
+                <Link className="jt-navbar-panel__link" to="/settings">
                   Full settings
-                </a>
+                </Link>
                 <button type="button" className="jt-navbar-panel__logout" onClick={handleLogout}>
                   Log out
                 </button>
