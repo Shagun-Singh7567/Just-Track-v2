@@ -41,12 +41,14 @@ Just Track v2 is a rebuild of the original Just Track app, moving from a JDBC-ba
 just-track-v2/
                 # Spring Boot application
 ├── src/main/java/...
+│   ├── config/
 │   ├── controller/       # AuthController, UserSettingsController, TransactionController, ...
 │   ├── service/          # UserSettingsService, ...
 │   ├── security/         # JwtAuthFilter, SecurityConfig, CustomUserDetailsService
 │   ├── dto/
 │   ├── model/
 │   └── exception/              # GlobalExceptionHandler
+│   ├── repository/
 └── src/main/resources/
 │    └── application.properties
 ├── frontend/                  # React + Vite application
@@ -55,7 +57,6 @@ just-track-v2/
 │   │   ├── auth/               # authStorage.js
 │   │   ├── context/            # SettingsContext, etc.
 │   │   ├── components/
-│   │   └── pages/
 │   └── vite.config.js
 └── README.md
 ```
@@ -110,6 +111,6 @@ The frontend will be available at `http://localhost:5173`.
 ## Deployment
 
 - **Backend** — deployed to Render, with environment variables configured in the Render dashboard and a separate production PostgreSQL instance.
-- **Frontend** — deployed to Vercel, pointed at the Railway-hosted API.
+- **Frontend** — deployed to Vercel, pointed at the Render-hosted API.
 
 

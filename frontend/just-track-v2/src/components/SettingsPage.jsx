@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { authStorage } from "../api/authStorage";
-import { authApi } from "../api/authApi"; // swap for your real client
+import { authApi } from "../api/authApi";
 
 const CURRENCIES = [
   { code: "USD", label: "US Dollar" },
