@@ -1,6 +1,5 @@
 package com.shagun.just_track_v2.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.shagun.just_track_v2.model.User;
@@ -8,8 +7,11 @@ import com.shagun.just_track_v2.repository.UserRepository;
 
 @Service
 public class UserService {
-    @Autowired
-    private UserRepository repository;
+    private final UserRepository repository;
+
+    public UserService(UserRepository repository) {
+        this.repository = repository;
+    }
 
     public User createUser(User user)
     {

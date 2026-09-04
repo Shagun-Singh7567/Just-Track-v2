@@ -1,6 +1,5 @@
 package com.shagun.just_track_v2.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,8 +15,11 @@ import com.shagun.just_track_v2.service.UserService;
     @RestController
 @RequestMapping
 public class UserController {
-    @Autowired
-    UserService service;
+    final UserService service;
+
+        public UserController(UserService service) {
+            this.service = service;
+        }
 
     @PostMapping("/users")
     public ResponseEntity<User> createUser(@RequestBody User user)

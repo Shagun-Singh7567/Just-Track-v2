@@ -2,7 +2,6 @@ package com.shagun.just_track_v2.service;
 
 import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,8 +15,11 @@ import com.shagun.just_track_v2.repository.UserSettingsRepository;
 
 @Service
 public class UserSettingsService {
-    @Autowired
-    private UserSettingsRepository repository;
+    private final UserSettingsRepository repository;
+
+    public UserSettingsService(UserSettingsRepository repository) {
+        this.repository = repository;
+    }
 
     private static final Theme DEFAULT_THEME = Theme.LIGHT;
     private static final Currency DEFAULT_CURRENCY = Currency.USD;

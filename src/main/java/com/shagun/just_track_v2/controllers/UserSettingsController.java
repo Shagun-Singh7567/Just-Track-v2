@@ -1,6 +1,5 @@
 package com.shagun.just_track_v2.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,11 +21,15 @@ import com.shagun.just_track_v2.service.UserSettingsService;
 @RestController
 @RequestMapping("/settings")
 public class UserSettingsController {
-    @Autowired
-    UserSettingsService service;
+    final UserSettingsService service;
+    final UserRepository userRepository;
 
-    @Autowired
-    UserRepository userRepository;
+    public UserSettingsController(UserSettingsService service, UserRepository userRepository) {
+        this.service = service;
+        this.userRepository = userRepository;
+    }
+
+
 
     private User resolveUser(UserDetails userDetails) {
         return userRepository.findByEmailAddress(userDetails.getUsername())
