@@ -1,7 +1,7 @@
 name: Migrate Render Postgres
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # lets you trigger it manually from the Actions tab
 
 jobs:
   migrate:
@@ -10,8 +10,24 @@ jobs:
       - name: Install postgresql-client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Dump source database
-        run: pg_dump -Fc --no-owner --no-acl -d "${{ secrets.SOURCE_DB_URL }}" -f render_dump.dump
+      - name: Test connectivity to source database
+        run: pg_isready -d "${{ secrets.SOURCE_DB_URL }}"
 
-      - name: Restore into destination database
-        run: pg_restore --no-owners --no-acl -d "${{ secrets.DEST_DB_URL }}" render_dump.dump
+      - name: Test connectivity to destination database
+        run: pg_isready -d "${{ secrets.DEST_DB_URL }}"
+
+      - name: Dump source database (with retry)
+        run: |
+          for i in 1 2 3; do
+            pg_dump -Fc --no-owner --no-acl -d "${{ secrets.SOURCE_DB_URL }}" -f render_dump.dump && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+
+      - name: Restore into destination database (with retry)
+        run: |
+          for i in 1 2 3; do
+            pg_restore --no-owner --no-acl -d "${{ secrets.DEST_DB_URL }}" render_dump.dump && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
