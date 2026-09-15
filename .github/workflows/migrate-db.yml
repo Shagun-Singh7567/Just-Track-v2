@@ -1,0 +1,17 @@
+name: Migrate Render Postgres
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump source database
+        run: pg_dump -Fc --no-owner --no-acl -d "${{ secrets.SOURCE_DB_URL }}" -f render_dump.dump
+
+      - name: Restore into destination database
+        run: pg_restore --no-owners --no-acl -d "${{ secrets.DEST_DB_URL }}" render_dump.dump
