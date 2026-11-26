@@ -1,4 +1,4 @@
-package com.shagun.just_track_v2.controllers;
+package com.shagun.just_track_v2.controller;
 
 import com.shagun.just_track_v2.dto.AuthResponse;
 import com.shagun.just_track_v2.dto.LoginRequest;
